@@ -1,0 +1,960 @@
+package library.core;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPasswordField;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableModel;
+
+import library.impl.FileCatalogPersistenceCSV;
+import library.impl.LibraryCatalogImpl;
+import library.models.Book;
+import library.models.BorrowRecord;
+import library.models.AdminUser;
+import library.models.FacultyUser;
+import library.models.StudentUser;
+import library.models.User;
+import library.util.CsvUtils;
+
+/**
+ * Beginner-friendly Swing UI for the Library System.
+ */
+public class LibrarySystemGUI extends JFrame {
+    private static class UsersFileData {
+        String[] headers;
+        List<String[]> rows;
+
+        UsersFileData(String[] headers, List<String[]> rows) {
+            this.headers = headers;
+            this.rows = rows;
+        }
+    }
+
+    private final AbstractLibraryCatalog catalog;
+    private User currentUser;
+    private JLabel sessionLabel;
+
+    private JButton addButton;
+    private JButton addUserButton;
+    private JButton viewUsersButton;
+    private JButton updateButton;
+    private JButton deleteButton;
+    private JButton searchButton;
+    private JButton showAllButton;
+    private JButton availableButton;
+    private JButton borrowButton;
+    private JButton returnButton;
+    private JButton historyButton;
+    private JButton logoutButton;
+
+    private DefaultTableModel tableModel;
+    private JTable table;
+
+    public LibrarySystemGUI() {
+        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistenceCSV("catalog.txt"));
+
+        setTitle("Smart Library Catalog System");
+        setSize(1200, 600);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        buildUI();
+        showLoginDialog();
+        refreshBookViewForCurrentRole();
+    }
+
+    private void buildUI() {
+        getContentPane().setBackground(Color.WHITE);
+        setLayout(new BorderLayout(10, 10));
+
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(Color.WHITE);
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
+
+        JLabel title = new JLabel("Library System", SwingConstants.CENTER);
+        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        topPanel.add(title, BorderLayout.CENTER);
+
+        sessionLabel = new JLabel("Not logged in", SwingConstants.RIGHT);
+        sessionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        topPanel.add(sessionLabel, BorderLayout.EAST);
+        add(topPanel, BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setBackground(Color.WHITE);
+
+        tableModel = new DefaultTableModel(
+                new Object[] { "ISBN", "Title", "Author", "Genre", "Available Copies", "Borrow Count" },
+                0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        table = new JTable(tableModel);
+        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setRowHeight(22);
+        table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 13));
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setPreferredSize(new Dimension(1100, 280));
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
+
+        add(centerPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
+
+        addButton = new JButton("Add Book");
+        addUserButton = new JButton("Add User");
+        viewUsersButton = new JButton("View Users");
+        updateButton = new JButton("Update Book");
+        deleteButton = new JButton("Delete Book");
+        searchButton = new JButton("Search");
+        showAllButton = new JButton("Show All");
+        availableButton = new JButton("Available Books");
+        borrowButton = new JButton("Borrow Book");
+        returnButton = new JButton("Return Book");
+        historyButton = new JButton("Borrow History");
+        logoutButton = new JButton("Logout");
+
+        addButton.addActionListener(e -> addBookFromInput());
+        addUserButton.addActionListener(e -> addUserFromInput());
+        viewUsersButton.addActionListener(e -> showAllUsers());
+        updateButton.addActionListener(e -> updateBookFromInput());
+        deleteButton.addActionListener(e -> deleteBookByIsbn());
+        searchButton.addActionListener(e -> searchBooks());
+        showAllButton.addActionListener(e -> showAllBooks());
+        availableButton.addActionListener(e -> showAvailableBooks());
+        borrowButton.addActionListener(e -> borrowBookForCurrentUser());
+        returnButton.addActionListener(e -> returnBookForCurrentUser());
+        historyButton.addActionListener(e -> showBorrowHistory());
+        logoutButton.addActionListener(e -> logout());
+
+        buttonPanel.add(addButton);
+        buttonPanel.add(addUserButton);
+        buttonPanel.add(viewUsersButton);
+        buttonPanel.add(updateButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(searchButton);
+        buttonPanel.add(showAllButton);
+        buttonPanel.add(availableButton);
+        buttonPanel.add(borrowButton);
+        buttonPanel.add(returnButton);
+        buttonPanel.add(historyButton);
+        buttonPanel.add(logoutButton);
+
+        applyRolePermissions();
+
+        add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private void addBookFromInput() {
+        if (currentUser == null || !currentUser.canAddBook()) {
+            JOptionPane.showMessageDialog(this, "Only Admin can add books.");
+            return;
+        }
+
+        JTextField isbnInput = new JTextField();
+        JTextField titleInput = new JTextField();
+        JTextField authorInput = new JTextField();
+        JTextField genreInput = new JTextField();
+        JTextField publisherInput = new JTextField();
+        JTextField totalCopiesInput = new JTextField();
+
+        JPanel addPanel = new JPanel(new GridLayout(6, 2, 8, 8));
+        addPanel.add(new JLabel("ISBN:"));
+        addPanel.add(isbnInput);
+        addPanel.add(new JLabel("Title:"));
+        addPanel.add(titleInput);
+        addPanel.add(new JLabel("Author:"));
+        addPanel.add(authorInput);
+        addPanel.add(new JLabel("Genre:"));
+        addPanel.add(genreInput);
+        addPanel.add(new JLabel("Publisher:"));
+        addPanel.add(publisherInput);
+        addPanel.add(new JLabel("Total Copies:"));
+        addPanel.add(totalCopiesInput);
+
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                addPanel,
+                "Add New Book",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (option != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String isbn = isbnInput.getText().trim();
+        String title = titleInput.getText().trim();
+        String author = authorInput.getText().trim();
+        String genre = genreInput.getText().trim();
+        String publisher = publisherInput.getText().trim();
+        String totalCopiesText = totalCopiesInput.getText().trim();
+
+        if (isbn.isEmpty() || title.isEmpty() || author.isEmpty() || genre.isEmpty() || publisher.isEmpty()
+                || totalCopiesText.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Please fill ISBN, Title, Author, Genre, Publisher, and Total Copies.");
+            return;
+        }
+
+        int totalCopies;
+        try {
+            totalCopies = Integer.parseInt(totalCopiesText);
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Total Copies must be a valid number.");
+            return;
+        }
+
+        if (totalCopies <= 0) {
+            JOptionPane.showMessageDialog(this, "Total Copies must be greater than 0.");
+            return;
+        }
+
+        Book book = new Book(isbn, title, author, genre, publisher, totalCopies, totalCopies, "General Shelf", 0);
+        catalog.addBook(book);
+        persistChanges();
+        showAllBooks();
+
+        JOptionPane.showMessageDialog(this, "Book added successfully.");
+    }
+
+    private void addUserFromInput() {
+        if (currentUser == null || !currentUser.canAddBook()) {
+            JOptionPane.showMessageDialog(this, "Only Admin can add users.");
+            return;
+        }
+
+        JTextField userIdInput = new JTextField();
+        JTextField nameInput = new JTextField();
+        JTextField usernameInput = new JTextField();
+        JTextField departmentInput = new JTextField();
+        JComboBox<String> typeInput = new JComboBox<>(new String[] { "Student", "Faculty" });
+        JTextField contactInput = new JTextField();
+
+        JPanel addUserPanel = new JPanel(new GridLayout(6, 2, 8, 8));
+        addUserPanel.add(new JLabel("User ID:"));
+        addUserPanel.add(userIdInput);
+        addUserPanel.add(new JLabel("Name:"));
+        addUserPanel.add(nameInput);
+        addUserPanel.add(new JLabel("Username:"));
+        addUserPanel.add(usernameInput);
+        addUserPanel.add(new JLabel("Department:"));
+        addUserPanel.add(departmentInput);
+        addUserPanel.add(new JLabel("Student/Faculty:"));
+        addUserPanel.add(typeInput);
+        addUserPanel.add(new JLabel("Contact No:"));
+        addUserPanel.add(contactInput);
+
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                addUserPanel,
+                "Add User",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (option != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String userId = userIdInput.getText().trim();
+        String name = nameInput.getText().trim();
+        String username = usernameInput.getText().trim();
+        String department = departmentInput.getText().trim();
+        String type = String.valueOf(typeInput.getSelectedItem());
+        String contactNo = contactInput.getText().trim();
+        String password = username + "123";
+
+        if (userId.isEmpty() || name.isEmpty() || username.isEmpty() || department.isEmpty() || type.isEmpty()
+                || contactNo.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill all user fields.");
+            return;
+        }
+
+        if (isUsernameAlreadyExists(username)) {
+            JOptionPane.showMessageDialog(this, "Username already exists. Please choose a different username.");
+            return;
+        }
+
+        boolean saved = saveUserRecord(userId, name, username, department, type, contactNo, password);
+        if (saved) {
+            JOptionPane.showMessageDialog(this, "User added successfully. Auto password: " + password);
+        } else {
+            JOptionPane.showMessageDialog(this, "Could not save user record.");
+        }
+    }
+
+    private boolean isUsernameAlreadyExists(String username) {
+        if (username == null) {
+            return false;
+        }
+
+        UsersFileData usersFileData = loadUsersFileData();
+        if (usersFileData == null) {
+            return false;
+        }
+
+        int usernameIndex = indexOfIgnoreCase(usersFileData.headers, "username");
+        if (usernameIndex < 0) {
+            return false;
+        }
+
+        for (String[] parts : usersFileData.rows) {
+            if (usernameIndex < parts.length && username.equalsIgnoreCase(parts[usernameIndex].trim())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean saveUserRecord(String userId, String name, String username, String department, String type,
+            String contactNo, String password) {
+        File file = new File("users.txt");
+        boolean writeHeader = !file.exists() || file.length() == 0;
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
+            if (writeHeader) {
+                writer.write("userId,name,username,department,type,contactNo,password");
+                writer.newLine();
+            }
+
+            writer.write(String.join(",",
+                    CsvUtils.escape(userId),
+                    CsvUtils.escape(name),
+                    CsvUtils.escape(username),
+                    CsvUtils.escape(department),
+                    CsvUtils.escape(type),
+                    CsvUtils.escape(contactNo),
+                    CsvUtils.escape(password)));
+            writer.newLine();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private void showAllUsers() {
+        if (currentUser == null || !currentUser.canAddBook()) {
+            JOptionPane.showMessageDialog(this, "Only Admin can view users.");
+            return;
+        }
+
+        UsersFileData usersFileData = loadUsersFileData();
+        if (usersFileData == null || usersFileData.headers.length == 0) {
+            JOptionPane.showMessageDialog(this, "No users found.");
+            return;
+        }
+
+        DefaultTableModel userModel = new DefaultTableModel(usersFileData.headers, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        for (String[] parts : usersFileData.rows) {
+            Object[] row = new Object[usersFileData.headers.length];
+            for (int i = 0; i < usersFileData.headers.length; i++) {
+                row[i] = i < parts.length ? parts[i] : "";
+            }
+            userModel.addRow(row);
+        }
+
+        JTable userTable = new JTable(userModel);
+        userTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        userTable.setRowHeight(20);
+        userTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+        JScrollPane pane = new JScrollPane(userTable);
+        pane.setPreferredSize(new Dimension(860, 260));
+        JOptionPane.showMessageDialog(this, pane, "All Users", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void updateBookFromInput() {
+        if (currentUser == null || !currentUser.canUpdateBookInfo()) {
+            JOptionPane.showMessageDialog(this, "Only Admin can update book information.");
+            return;
+        }
+
+        JTextField isbnInput = new JTextField();
+        JTextField titleInput = new JTextField();
+        JTextField authorInput = new JTextField();
+        JTextField genreInput = new JTextField();
+
+        JPanel updatePanel = new JPanel(new GridLayout(4, 2, 8, 8));
+        updatePanel.add(new JLabel("ISBN (required):"));
+        updatePanel.add(isbnInput);
+        updatePanel.add(new JLabel("Title (optional):"));
+        updatePanel.add(titleInput);
+        updatePanel.add(new JLabel("Author (optional):"));
+        updatePanel.add(authorInput);
+        updatePanel.add(new JLabel("Genre (optional):"));
+        updatePanel.add(genreInput);
+
+        int option = JOptionPane.showConfirmDialog(
+                this,
+                updatePanel,
+                "Update Book Information",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+
+        if (option != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String isbn = isbnInput.getText().trim();
+        String title = titleInput.getText().trim();
+        String author = authorInput.getText().trim();
+        String genre = genreInput.getText().trim();
+
+        if (isbn.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter ISBN to update a book.");
+            return;
+        }
+
+        boolean success = catalog.updateBookInfo(isbn, title, author, genre);
+        if (success) {
+            persistChanges();
+        }
+        showAllBooks();
+        JOptionPane.showMessageDialog(this,
+                success ? "Book information updated." : "Update failed. Book not found.");
+    }
+
+    private void deleteBookByIsbn() {
+        if (currentUser == null || !currentUser.canDeleteBook()) {
+            JOptionPane.showMessageDialog(this, "Only Admin can delete books.");
+            return;
+        }
+
+        String isbn = JOptionPane.showInputDialog(this, "Enter ISBN to delete:");
+        if (isbn == null) {
+            return;
+        }
+        isbn = isbn.trim();
+        if (isbn.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Enter ISBN to delete a book.");
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Delete book with ISBN " + isbn + "?",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        boolean success = catalog.deleteBook(isbn);
+        if (success) {
+            persistChanges();
+        }
+        showAllBooks();
+        JOptionPane.showMessageDialog(this, success ? "Book deleted." : "Delete failed. Book not found.");
+    }
+
+    private void searchBooks() {
+        String[] searchTypes = { "ISBN", "Title", "Author", "Genre" };
+        String selectedType = (String) JOptionPane.showInputDialog(
+                this,
+                "Search by:",
+                "Search Books",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                searchTypes,
+                searchTypes[0]);
+
+        if (selectedType == null) {
+            return;
+        }
+
+        String query = JOptionPane.showInputDialog(this, "Enter " + selectedType + ":");
+        if (query == null) {
+            return;
+        }
+
+        query = query.trim();
+        if (query.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Search text cannot be empty.");
+            return;
+        }
+
+        List<Book> results = new ArrayList<>();
+
+        if ("ISBN".equals(selectedType)) {
+            Book found = catalog.getBookByIsbn(query);
+            if (found != null) {
+                results.add(found);
+            }
+        } else if ("Title".equals(selectedType)) {
+            results = catalog.searchByTitle(query);
+        } else if ("Author".equals(selectedType)) {
+            results = catalog.searchByAuthor(query);
+        } else if ("Genre".equals(selectedType)) {
+            results = catalog.searchByGenre(query);
+        } else {
+            JOptionPane.showMessageDialog(this, "Enter ISBN, Title, Author, or Genre to search.");
+            return;
+        }
+
+        populateTable(results);
+    }
+
+    private void showAllBooks() {
+        populateTable(new ArrayList<>(catalog.getAllBooks().values()));
+    }
+
+    private void refreshBookViewForCurrentRole() {
+        showAllBooks();
+    }
+
+    private void showAvailableBooks() {
+        populateTable(catalog.getAvailableBooks());
+    }
+
+    private void borrowBookForCurrentUser() {
+        if (currentUser == null || !currentUser.canBorrowBook()) {
+            JOptionPane.showMessageDialog(this, "Only Student/Faculty can borrow books.");
+            return;
+        }
+
+        int activeBorrows = catalog.getActiveBorrowCountForUser(currentUser.getUsername());
+        if ("Student".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 3) {
+            JOptionPane.showMessageDialog(this, "Borrow limit reached: Students can keep at most 3 active books.");
+            return;
+        }
+        if ("Faculty".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 7) {
+            JOptionPane.showMessageDialog(this, "Borrow limit reached: Faculty can keep at most 7 active books.");
+            return;
+        }
+
+        String isbn = getIsbnFromSelectionOrInput("borrow");
+        if (isbn == null) {
+            return;
+        }
+
+        boolean success = catalog.borrowBook(isbn, currentUser.getUsername(), currentUser.getRole());
+        if (success) {
+            persistChanges();
+            showAvailableBooks();
+            if ("Student".equalsIgnoreCase(currentUser.getRole())) {
+                String dueDate = LocalDate.now().plusDays(10).toString();
+                JOptionPane.showMessageDialog(this, "Book borrowed successfully. Due date: " + dueDate + " (10 days).");
+            } else if ("Faculty".equalsIgnoreCase(currentUser.getRole())) {
+                String dueDate = LocalDate.now().plusDays(20).toString();
+                JOptionPane.showMessageDialog(this, "Book borrowed successfully. Due date: " + dueDate + " (20 days).");
+            } else {
+                JOptionPane.showMessageDialog(this, "Book borrowed successfully.");
+            }
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Borrow failed. Book not found, no available copies, or borrow limit reached.");
+        }
+    }
+
+    private void returnBookForCurrentUser() {
+        if (currentUser == null || !currentUser.canBorrowBook()) {
+            JOptionPane.showMessageDialog(this, "Only Student/Faculty can return books.");
+            return;
+        }
+
+        String isbn = getIsbnFromSelectionOrInput("return");
+        if (isbn == null) {
+            return;
+        }
+
+        boolean success = catalog.returnBook(isbn, currentUser.getUsername(), currentUser.getRole());
+        if (success) {
+            persistChanges();
+            showAvailableBooks();
+            JOptionPane.showMessageDialog(this, "Book returned successfully.");
+        } else {
+            JOptionPane.showMessageDialog(this, "Return failed. Book not found or all copies are already returned.");
+        }
+    }
+
+    private String getIsbnFromSelectionOrInput(String actionName) {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow >= 0) {
+            Object isbnValue = table.getValueAt(selectedRow, 0);
+            if (isbnValue != null) {
+                String isbnFromTable = isbnValue.toString().trim();
+                if (!isbnFromTable.isEmpty()) {
+                    return isbnFromTable;
+                }
+            }
+        }
+
+        String isbn = JOptionPane.showInputDialog(this, "Enter ISBN to " + actionName + ":");
+        if (isbn == null) {
+            return null;
+        }
+
+        isbn = isbn.trim();
+        if (isbn.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "ISBN cannot be empty.");
+            return null;
+        }
+
+        return isbn;
+    }
+
+    private void persistChanges() {
+        catalog.saveCatalog();
+        catalog.saveBorrowHistory();
+    }
+
+    private void populateTable(List<Book> books) {
+        tableModel.setRowCount(0);
+        for (Book book : books) {
+            tableModel.addRow(new Object[] {
+                    book.getIsbn(),
+                    book.getTitle(),
+                    book.getAuthor(),
+                    book.getGenre(),
+                    book.getAvailableCopies(),
+                    book.getBorrowCount()
+            });
+        }
+    }
+
+    private void showBorrowHistory() {
+        List<BorrowRecord> history = getHistoryForCurrentUser();
+        Map<String, String> userTypes = loadUserTypesFromFile();
+
+        DefaultTableModel historyModel = new DefaultTableModel(
+                new Object[] { "Action", "ISBN", "Title", "User", "Type", "Issue Date", "Due Date" },
+                0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        for (BorrowRecord record : history) {
+            historyModel.addRow(new Object[] {
+                    record.getAction(),
+                    record.getIsbn(),
+                    record.getBookTitle(),
+                    record.getBorrowerName(),
+                    resolveUserTypeForHistory(record.getBorrowerName(), record.getUserRole(), userTypes),
+                    record.getIssueDate(),
+                    record.getDueDate()
+
+            });
+        }
+
+        JTable historyTable = new JTable(historyModel);
+        historyTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        historyTable.setRowHeight(20);
+        historyTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+        JScrollPane pane = new JScrollPane(historyTable);
+        pane.setPreferredSize(new Dimension(760, 260));
+        String dialogTitle = currentUser != null && currentUser.canViewAllBorrowHistory()
+                ? "Borrow History (All Users)"
+                : "My Borrow History";
+        JOptionPane.showMessageDialog(this, pane, dialogTitle, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private Map<String, String> loadUserTypesFromFile() {
+        Map<String, String> userTypes = new HashMap<>();
+
+        UsersFileData usersFileData = loadUsersFileData();
+        if (usersFileData == null) {
+            return userTypes;
+        }
+
+        int usernameIndex = indexOfIgnoreCase(usersFileData.headers, "username");
+        int typeIndex = indexOfIgnoreCase(usersFileData.headers, "type");
+        if (usernameIndex < 0 || typeIndex < 0) {
+            return userTypes;
+        }
+
+        for (String[] parts : usersFileData.rows) {
+            if (usernameIndex >= parts.length || typeIndex >= parts.length) {
+                continue;
+            }
+
+            String username = parts[usernameIndex].trim();
+            String type = parts[typeIndex].trim();
+            if (!username.isEmpty() && !type.isEmpty()) {
+                userTypes.put(username, type);
+            }
+        }
+
+        return userTypes;
+    }
+
+    private String resolveUserTypeForHistory(String username, String fallbackType, Map<String, String> userTypes) {
+        if (username == null) {
+            return fallbackType;
+        }
+
+        String type = userTypes.get(username);
+        if (type != null && !type.trim().isEmpty()) {
+            return type;
+        }
+
+        if ("admin".equalsIgnoreCase(username)) {
+            return "Admin";
+        }
+
+        return fallbackType;
+    }
+
+    private void showLoginDialog() {
+        currentUser = null;
+
+        JPanel loginPanel = new JPanel(new GridLayout(2, 2, 8, 8));
+        loginPanel.setBackground(Color.WHITE);
+
+        JTextField usernameField = new JTextField();
+        JPasswordField passwordField = new JPasswordField();
+
+        loginPanel.add(new JLabel("Username: "));
+        loginPanel.add(usernameField);
+        loginPanel.add(new JLabel("Password: "));
+        loginPanel.add(passwordField);
+
+        while (currentUser == null) {
+            int option = JOptionPane.showConfirmDialog(
+                    this,
+                    loginPanel,
+                    "Login (Admin / Student / Faculty)",
+                    JOptionPane.OK_CANCEL_OPTION,
+                    JOptionPane.PLAIN_MESSAGE);
+
+            if (option != JOptionPane.OK_OPTION) {
+                dispose();
+                return;
+            }
+
+            String username = usernameField.getText().trim();
+            String password = new String(passwordField.getPassword());
+
+            currentUser = authenticate(username, password);
+            if (currentUser == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid login.\nAdmin: admin / admin123\nOther users: username/password from users.txt");
+            }
+        }
+
+        sessionLabel.setText("Logged in as: " + currentUser.getRole() + " (" + currentUser.getUsername() + ")");
+        applyRolePermissions();
+    }
+
+    private List<BorrowRecord> getHistoryForCurrentUser() {
+        List<BorrowRecord> allHistory = catalog.getBorrowHistory();
+
+        if (currentUser == null) {
+            return new ArrayList<>();
+        }
+
+        if (currentUser.canViewAllBorrowHistory()) {
+            return allHistory;
+        }
+
+        List<BorrowRecord> myHistory = new ArrayList<>();
+        for (BorrowRecord record : allHistory) {
+            if (currentUser.getUsername().equals(record.getBorrowerName())) {
+                myHistory.add(record);
+            }
+        }
+        return myHistory;
+    }
+
+    private void applyRolePermissions() {
+        boolean loggedIn = currentUser != null;
+        boolean isAdmin = loggedIn && currentUser.canAddBook();
+        boolean isBorrower = loggedIn && currentUser.canBorrowBook();
+
+        addButton.setVisible(isAdmin);
+        addUserButton.setVisible(isAdmin);
+        viewUsersButton.setVisible(isAdmin);
+        updateButton.setVisible(isAdmin);
+        deleteButton.setVisible(isAdmin);
+        showAllButton.setVisible(loggedIn);
+
+        availableButton.setVisible(isBorrower);
+        borrowButton.setVisible(isBorrower);
+        returnButton.setVisible(isBorrower);
+
+        searchButton.setVisible(loggedIn);
+        historyButton.setVisible(loggedIn);
+        logoutButton.setVisible(loggedIn);
+
+        addButton.setEnabled(isAdmin);
+        addUserButton.setEnabled(isAdmin);
+        viewUsersButton.setEnabled(isAdmin);
+        updateButton.setEnabled(loggedIn && currentUser.canUpdateBookInfo());
+        deleteButton.setEnabled(loggedIn && currentUser.canDeleteBook());
+        searchButton.setEnabled(loggedIn);
+        showAllButton.setEnabled(loggedIn);
+        availableButton.setEnabled(loggedIn);
+        borrowButton.setEnabled(isBorrower);
+        returnButton.setEnabled(isBorrower);
+        historyButton.setEnabled(loggedIn);
+        logoutButton.setEnabled(loggedIn);
+
+        revalidate();
+        repaint();
+    }
+
+    private void logout() {
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Do you want to logout now?",
+                "Logout",
+                JOptionPane.YES_NO_OPTION);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        currentUser = null;
+        sessionLabel.setText("Not logged in");
+        applyRolePermissions();
+
+        showLoginDialog();
+        refreshBookViewForCurrentRole();
+    }
+
+    private User authenticate(String username, String password) {
+        if (username == null || username.trim().isEmpty()) {
+            return null;
+        }
+
+        String normalizedUsername = username.trim();
+
+        User admin = new AdminUser("admin", "admin123");
+        if (admin.getUsername().equalsIgnoreCase(normalizedUsername) && admin.checkPassword(password)) {
+            return admin;
+        }
+
+        User fileUser = authenticateFromUsersFile(normalizedUsername, password);
+        if (fileUser != null) {
+            return fileUser;
+        }
+
+        return null;
+    }
+
+    private User authenticateFromUsersFile(String username, String password) {
+        UsersFileData usersFileData = loadUsersFileData();
+        if (usersFileData == null) {
+            return null;
+        }
+
+        int usernameIndex = indexOfIgnoreCase(usersFileData.headers, "username");
+        int passwordIndex = indexOfIgnoreCase(usersFileData.headers, "password");
+        int typeIndex = indexOfIgnoreCase(usersFileData.headers, "type");
+
+        if (usernameIndex < 0 || passwordIndex < 0) {
+            return null;
+        }
+
+        for (String[] parts : usersFileData.rows) {
+            if (parts.length <= Math.max(usernameIndex, passwordIndex)) {
+                continue;
+            }
+
+            String savedUsername = parts[usernameIndex].trim();
+            String savedPassword = parts[passwordIndex].trim();
+            if (!savedUsername.equals(username) || !savedPassword.equals(password)) {
+                continue;
+            }
+
+            String userType = typeIndex >= 0 && typeIndex < parts.length ? parts[typeIndex].trim() : "Student";
+            if ("Admin".equalsIgnoreCase(userType)) {
+                return new AdminUser(savedUsername, savedPassword);
+            }
+            if ("Faculty".equalsIgnoreCase(userType)) {
+                return new FacultyUser(savedUsername, savedPassword);
+            }
+
+            return new StudentUser(savedUsername, savedPassword);
+        }
+
+        return null;
+    }
+
+    private UsersFileData loadUsersFileData() {
+        File file = new File("users.txt");
+        if (!file.exists() || file.length() == 0) {
+            return null;
+        }
+
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String headerLine = reader.readLine();
+            if (headerLine == null || headerLine.trim().isEmpty()) {
+                return null;
+            }
+
+            String[] headers = parseCsvLine(headerLine);
+            List<String[]> rows = new ArrayList<>();
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) {
+                    continue;
+                }
+                rows.add(parseCsvLine(line));
+            }
+
+            return new UsersFileData(headers, rows);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private int indexOfIgnoreCase(String[] values, String target) {
+        if (values == null || target == null) {
+            return -1;
+        }
+
+        for (int i = 0; i < values.length; i++) {
+            if (target.equalsIgnoreCase(values[i].trim())) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private String[] parseCsvLine(String line) {
+        return CsvUtils.parseCsvLine(line);
+    }
+
+}
