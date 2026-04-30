@@ -124,7 +124,7 @@ public class Book {
     }
 
     /**
-     * Return book if it does not exceed total copies.
+     * Return book if it does not exceed total copies book.
      */
     public boolean returnBook() {
         if (availableCopies < totalCopies) {
