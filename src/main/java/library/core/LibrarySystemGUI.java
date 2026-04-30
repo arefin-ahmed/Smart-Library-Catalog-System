@@ -78,7 +78,7 @@ public class LibrarySystemGUI extends JFrame {
     private JTable table;
 
     public LibrarySystemGUI() {
-        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistence("catalog.txt"));
+        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistence("txt files/catalog.txt"));
 
         setTitle("Smart Library Catalog System");
         setSize(1200, 600);
@@ -345,7 +345,7 @@ public class LibrarySystemGUI extends JFrame {
 
     private boolean saveUserRecord(String userId, String name, String username, String department, String type,
             String contactNo, String password) {
-        File file = new File("users.txt");
+        File file = new File("txt files/users.txt");
         boolean writeHeader = !file.exists() || file.length() == 0;
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file, true))) {
@@ -810,7 +810,7 @@ public class LibrarySystemGUI extends JFrame {
             currentUser = authenticate(username, password);
             if (currentUser == null) {
                 JOptionPane.showMessageDialog(this,
-                        "Invalid login.\nAdmin: admin / admin123\nOther users: username/password from users.txt");
+                        "Invalid login.\nAdmin: admin / admin123\nOther users: username/password from txt files/users.txt");
             }
         }
 
@@ -941,7 +941,7 @@ public class LibrarySystemGUI extends JFrame {
                 continue;
             }
 
-            String userType = typeIndex >= 0 && typeIndex < parts.length ? parts[typeIndex].trim() : "Student";
+            String userType = typeIndex >= 0 && typeIndex < parts.length ? parts[typeIndex].trim() : "UG_Student";
             if ("Admin".equalsIgnoreCase(userType)) {
                 return new AdminUser(savedUsername, savedPassword);
             }
@@ -962,7 +962,7 @@ public class LibrarySystemGUI extends JFrame {
     }
 
     private UsersFileData loadUsersFileData() {
-        File file = new File("users.txt");
+        File file = new File("txt files/users.txt");
         if (!file.exists() || file.length() == 0) {
             return null;
         }

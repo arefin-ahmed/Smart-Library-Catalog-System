@@ -3,9 +3,6 @@ package library.util;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Small CSV helper shared by persistence and GUI code.
- */
 public final class textfile {
     private textfile() {
     }

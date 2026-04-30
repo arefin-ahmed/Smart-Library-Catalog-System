@@ -27,7 +27,7 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
     public LibraryCatalogImpl(CatalogPersistence persistence) {
         super(persistence);
         this.borrowHistory = new ArrayList<>();
-        this.historyPersistence = new BorrowHistoryPersistenceTXT("borrow_history.txt");
+        this.historyPersistence = new BorrowHistoryPersistenceTXT("txt files/borrow_history.txt");
         loadBorrowHistory();
     }
 

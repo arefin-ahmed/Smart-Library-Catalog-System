@@ -19,7 +19,7 @@ public class BorrowHistoryPersistenceTXT {
     private final String filePath;
 
     public BorrowHistoryPersistenceTXT() {
-        this("borrow_history.txt");
+        this("txt files/borrow_history.txt");
     }
 
     public BorrowHistoryPersistenceTXT(String filePath) {

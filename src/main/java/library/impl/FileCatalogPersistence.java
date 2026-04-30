@@ -20,7 +20,7 @@ public class FileCatalogPersistence implements CatalogPersistence {
     private final String filePath;
 
     public FileCatalogPersistence() {
-        this("catalog.txt");
+        this("txt files/catalog.txt");
     }
 
     public FileCatalogPersistence(String filePath) {
