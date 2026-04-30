@@ -1,13 +1,13 @@
 package library.models;
 
-public class StudentUser extends User {
-    public StudentUser(String username, String password) {
+public class UG_Student extends User {
+    public UG_Student(String username, String password) {
         super(username, password);
     }
 
     @Override
     public String getRole() {
-        return "Student";
+        return "UG_Student";
     }
 
     @Override

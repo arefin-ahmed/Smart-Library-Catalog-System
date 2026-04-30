@@ -37,7 +37,8 @@ import library.models.Book;
 import library.models.BorrowRecord;
 import library.models.AdminUser;
 import library.models.FacultyUser;
-import library.models.StudentUser;
+import library.models.UG_Student;
+import library.models.G_Student;
 import library.models.User;
 import library.util.textfile;
 
@@ -259,7 +260,7 @@ public class LibrarySystemGUI extends JFrame {
         JTextField nameInput = new JTextField();
         JTextField usernameInput = new JTextField();
         JTextField departmentInput = new JTextField();
-        JComboBox<String> typeInput = new JComboBox<>(new String[] { "Student", "Faculty" });
+        JComboBox<String> typeInput = new JComboBox<>(new String[] { "UG_Student", "G_Student", "Faculty" });
         JTextField contactInput = new JTextField();
 
         JPanel addUserPanel = new JPanel(new GridLayout(6, 2, 8, 8));
@@ -271,7 +272,7 @@ public class LibrarySystemGUI extends JFrame {
         addUserPanel.add(usernameInput);
         addUserPanel.add(new JLabel("Department:"));
         addUserPanel.add(departmentInput);
-        addUserPanel.add(new JLabel("Student/Faculty:"));
+        addUserPanel.add(new JLabel("UG/G Student/Faculty:"));
         addUserPanel.add(typeInput);
         addUserPanel.add(new JLabel("Contact No:"));
         addUserPanel.add(contactInput);
@@ -546,13 +547,17 @@ public class LibrarySystemGUI extends JFrame {
 
     private void borrowBookForCurrentUser() {
         if (currentUser == null || !currentUser.canBorrowBook()) {
-            JOptionPane.showMessageDialog(this, "Only Student/Faculty can borrow books.");
+            JOptionPane.showMessageDialog(this, "Only UG/G Student or Faculty can borrow books.");
             return;
         }
 
         int activeBorrows = catalog.getActiveBorrowCountForUser(currentUser.getUsername());
-        if ("Student".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 3) {
-            JOptionPane.showMessageDialog(this, "Borrow limit reached: Students can keep at most 3 active books.");
+        if ("UG_Student".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 3) {
+            JOptionPane.showMessageDialog(this, "Borrow limit reached: UG Students can keep at most 3 active books.");
+            return;
+        }
+        if ("G_Student".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 5) {
+            JOptionPane.showMessageDialog(this, "Borrow limit reached: G Students can keep at most 5 active books.");
             return;
         }
         if ("Faculty".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 7) {
@@ -569,9 +574,12 @@ public class LibrarySystemGUI extends JFrame {
         if (success) {
             persistChanges();
             showAvailableBooks();
-            if ("Student".equalsIgnoreCase(currentUser.getRole())) {
+            if ("UG_Student".equalsIgnoreCase(currentUser.getRole())) {
                 String dueDate = LocalDate.now().plusDays(10).toString();
                 JOptionPane.showMessageDialog(this, "Book borrowed successfully. Due date: " + dueDate + " (10 days).");
+            } else if ("G_Student".equalsIgnoreCase(currentUser.getRole())) {
+                String dueDate = LocalDate.now().plusDays(15).toString();
+                JOptionPane.showMessageDialog(this, "Book borrowed successfully. Due date: " + dueDate + " (15 days).");
             } else if ("Faculty".equalsIgnoreCase(currentUser.getRole())) {
                 String dueDate = LocalDate.now().plusDays(20).toString();
                 JOptionPane.showMessageDialog(this, "Book borrowed successfully. Due date: " + dueDate + " (20 days).");
@@ -586,7 +594,7 @@ public class LibrarySystemGUI extends JFrame {
 
     private void returnBookForCurrentUser() {
         if (currentUser == null || !currentUser.canBorrowBook()) {
-            JOptionPane.showMessageDialog(this, "Only Student/Faculty can return books.");
+            JOptionPane.showMessageDialog(this, "Only UG/G Student or Faculty can return books.");
             return;
         }
 
@@ -753,7 +761,7 @@ public class LibrarySystemGUI extends JFrame {
             int option = JOptionPane.showConfirmDialog(
                     this,
                     loginPanel,
-                    "Login (Admin / Student / Faculty)",
+                    "Login (Admin / UG_Student / G_Student / Faculty)",
                     JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.PLAIN_MESSAGE);
 
@@ -905,7 +913,13 @@ public class LibrarySystemGUI extends JFrame {
                 return new FacultyUser(savedUsername, savedPassword);
             }
 
-            return new StudentUser(savedUsername, savedPassword);
+            if ("UG_Student".equalsIgnoreCase(userType)) {
+                return new UG_Student(savedUsername, savedPassword);
+            }
+            if ("G_Student".equalsIgnoreCase(userType)) {
+                return new G_Student(savedUsername, savedPassword);
+            }
+            return null;
         }
 
         return null;

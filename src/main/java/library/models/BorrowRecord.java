@@ -1,8 +1,5 @@
 package library.models;
 
-/**
- * Stores one borrowing activity for history view.
- */
 public class BorrowRecord {
     private String isbn;
     private String bookTitle;
