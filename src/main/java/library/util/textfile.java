@@ -6,8 +6,8 @@ import java.util.List;
 /**
  * Small CSV helper shared by persistence and GUI code.
  */
-public final class CsvUtils {
-    private CsvUtils() {
+public final class textfile {
+    private textfile() {
     }
 
     public static String escape(String value) {

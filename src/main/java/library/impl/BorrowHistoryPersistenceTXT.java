@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import library.models.BorrowRecord;
-import library.util.CsvUtils;
+import library.util.textfile;
 
 /**
  * Saves and loads borrow history in borrow_history.txt.
@@ -32,13 +32,13 @@ public class BorrowHistoryPersistenceTXT {
             writer.newLine();
             for (BorrowRecord record : history) {
                 writer.write(String.join(",",
-                        CsvUtils.escape(record.getIsbn()),
-                        CsvUtils.escape(record.getBookTitle()),
-                        CsvUtils.escape(record.getBorrowerName()),
-                        CsvUtils.escape(record.getUserRole()),
-                        CsvUtils.escape(record.getIssueDate()),
-                        CsvUtils.escape(record.getDueDate()),
-                        CsvUtils.escape(record.getAction())));
+                        textfile.escape(record.getIsbn()),
+                        textfile.escape(record.getBookTitle()),
+                        textfile.escape(record.getBorrowerName()),
+                        textfile.escape(record.getUserRole()),
+                        textfile.escape(record.getIssueDate()),
+                        textfile.escape(record.getDueDate()),
+                        textfile.escape(record.getAction())));
                 writer.newLine();
             }
         } catch (IOException e) {
@@ -80,6 +80,6 @@ public class BorrowHistoryPersistenceTXT {
     }
 
     private String[] parseCsvLine(String line) {
-        return CsvUtils.parseCsvLine(line);
+        return textfile.parseCsvLine(line);
     }
 }

@@ -11,19 +11,19 @@ import java.util.Map;
 
 import library.models.Book;
 import library.persistence.CatalogPersistence;
-import library.util.CsvUtils;
+import library.util.textfile;
 
 /**
  * Saves and loads catalog in a human-readable text file (catalog.txt).
  */
-public class FileCatalogPersistenceCSV implements CatalogPersistence {
+public class FileCatalogPersistence implements CatalogPersistence {
     private final String filePath;
 
-    public FileCatalogPersistenceCSV() {
+    public FileCatalogPersistence() {
         this("catalog.txt");
     }
 
-    public FileCatalogPersistenceCSV(String filePath) {
+    public FileCatalogPersistence(String filePath) {
         this.filePath = filePath;
     }
 
@@ -92,20 +92,20 @@ public class FileCatalogPersistenceCSV implements CatalogPersistence {
 
     private String toCsvLine(Book book) {
         return String.join(",",
-                CsvUtils.escape(book.getIsbn()),
-                CsvUtils.escape(book.getTitle()),
-                CsvUtils.escape(book.getAuthor()),
-                CsvUtils.escape(book.getGenre()),
-                CsvUtils.escape(book.getPublisher()),
+                textfile.escape(book.getIsbn()),
+                textfile.escape(book.getTitle()),
+                textfile.escape(book.getAuthor()),
+                textfile.escape(book.getGenre()),
+                textfile.escape(book.getPublisher()),
                 String.valueOf(book.getTotalCopies()),
                 String.valueOf(book.getAvailableCopies()),
-                // CsvUtils.escape(book.getShelfLocation()),
+                // textfile.escape(book.getShelfLocation()),
                 String.valueOf(book.getBorrowCount()),
-                CsvUtils.escape(book.getLastIssueDate()));
+                textfile.escape(book.getLastIssueDate()));
     }
 
     private String[] parseCsvLine(String line) {
-        return CsvUtils.parseCsvLine(line);
+        return textfile.parseCsvLine(line);
     }
 
     private int parseIntSafe(String value) {

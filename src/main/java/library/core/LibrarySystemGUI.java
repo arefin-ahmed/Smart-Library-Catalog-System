@@ -31,7 +31,7 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 
-import library.impl.FileCatalogPersistenceCSV;
+import library.impl.FileCatalogPersistence;
 import library.impl.LibraryCatalogImpl;
 import library.models.Book;
 import library.models.BorrowRecord;
@@ -39,7 +39,7 @@ import library.models.AdminUser;
 import library.models.FacultyUser;
 import library.models.StudentUser;
 import library.models.User;
-import library.util.CsvUtils;
+import library.util.textfile;
 
 /**
  * Beginner-friendly Swing UI for the Library System.
@@ -76,7 +76,7 @@ public class LibrarySystemGUI extends JFrame {
     private JTable table;
 
     public LibrarySystemGUI() {
-        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistenceCSV("catalog.txt"));
+        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistence("catalog.txt"));
 
         setTitle("Smart Library Catalog System");
         setSize(1200, 600);
@@ -350,13 +350,13 @@ public class LibrarySystemGUI extends JFrame {
             }
 
             writer.write(String.join(",",
-                    CsvUtils.escape(userId),
-                    CsvUtils.escape(name),
-                    CsvUtils.escape(username),
-                    CsvUtils.escape(department),
-                    CsvUtils.escape(type),
-                    CsvUtils.escape(contactNo),
-                    CsvUtils.escape(password)));
+                    textfile.escape(userId),
+                    textfile.escape(name),
+                    textfile.escape(username),
+                    textfile.escape(department),
+                    textfile.escape(type),
+                    textfile.escape(contactNo),
+                    textfile.escape(password)));
             writer.newLine();
             return true;
         } catch (IOException e) {
@@ -954,7 +954,7 @@ public class LibrarySystemGUI extends JFrame {
     }
 
     private String[] parseCsvLine(String line) {
-        return CsvUtils.parseCsvLine(line);
+        return textfile.parseCsvLine(line);
     }
 
 }
