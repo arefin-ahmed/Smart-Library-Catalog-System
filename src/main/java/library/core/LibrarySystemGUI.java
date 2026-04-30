@@ -71,6 +71,7 @@ public class LibrarySystemGUI extends JFrame {
     private JButton borrowButton;
     private JButton returnButton;
     private JButton historyButton;
+    private JButton topBorrowedButton;
     private JButton logoutButton;
 
     private DefaultTableModel tableModel;
@@ -144,6 +145,7 @@ public class LibrarySystemGUI extends JFrame {
         borrowButton = new JButton("Borrow Book");
         returnButton = new JButton("Return Book");
         historyButton = new JButton("Borrow History");
+        topBorrowedButton = new JButton("Top Borrowed");
         logoutButton = new JButton("Logout");
 
         addButton.addActionListener(e -> addBookFromInput());
@@ -157,6 +159,7 @@ public class LibrarySystemGUI extends JFrame {
         borrowButton.addActionListener(e -> borrowBookForCurrentUser());
         returnButton.addActionListener(e -> returnBookForCurrentUser());
         historyButton.addActionListener(e -> showBorrowHistory());
+        topBorrowedButton.addActionListener(e -> showTopBorrowedBooks());
         logoutButton.addActionListener(e -> logout());
 
         buttonPanel.add(addButton);
@@ -170,6 +173,7 @@ public class LibrarySystemGUI extends JFrame {
         buttonPanel.add(borrowButton);
         buttonPanel.add(returnButton);
         buttonPanel.add(historyButton);
+        buttonPanel.add(topBorrowedButton);
         buttonPanel.add(logoutButton);
 
         applyRolePermissions();
@@ -697,6 +701,36 @@ public class LibrarySystemGUI extends JFrame {
         JOptionPane.showMessageDialog(this, pane, dialogTitle, JOptionPane.INFORMATION_MESSAGE);
     }
 
+    private void showTopBorrowedBooks() {
+        List<Book> topBooks = catalog.getTopBorrowedBooks(3);
+        DefaultTableModel topModel = new DefaultTableModel(
+                new Object[] { "ISBN", "Title", "Author", "Borrow Count" },
+                0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        for (Book book : topBooks) {
+            topModel.addRow(new Object[] {
+                    book.getIsbn(),
+                    book.getTitle(),
+                    book.getAuthor(),
+                    book.getBorrowCount()
+            });
+        }
+
+        JTable topTable = new JTable(topModel);
+        topTable.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        topTable.setRowHeight(20);
+        topTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
+
+        JScrollPane pane = new JScrollPane(topTable);
+        pane.setPreferredSize(new Dimension(600, 200));
+        JOptionPane.showMessageDialog(this, pane, "Top Borrowed Books", JOptionPane.INFORMATION_MESSAGE);
+    }
+
     private Map<String, String> loadUserTypesFromFile() {
         Map<String, String> userTypes = new HashMap<>();
 
@@ -822,6 +856,7 @@ public class LibrarySystemGUI extends JFrame {
 
         searchButton.setVisible(loggedIn);
         historyButton.setVisible(loggedIn);
+        topBorrowedButton.setVisible(loggedIn);
         logoutButton.setVisible(loggedIn);
 
         addButton.setEnabled(isAdmin);
@@ -835,6 +870,7 @@ public class LibrarySystemGUI extends JFrame {
         borrowButton.setEnabled(isBorrower);
         returnButton.setEnabled(isBorrower);
         historyButton.setEnabled(loggedIn);
+        topBorrowedButton.setEnabled(loggedIn);
         logoutButton.setEnabled(loggedIn);
 
         revalidate();

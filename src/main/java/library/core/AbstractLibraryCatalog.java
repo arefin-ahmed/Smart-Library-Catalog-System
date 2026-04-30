@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import library.models.Book;
-import library.models.BorrowRecord;   // for tracking book borrow history
+import library.models.BorrowRecord; // for tracking book borrow history
 import library.persistence.CatalogPersistence;
 
 /**
@@ -88,6 +88,8 @@ public abstract class AbstractLibraryCatalog {
     public abstract List<BorrowRecord> getBorrowHistory();
 
     public abstract int getActiveBorrowCountForUser(String borrowerName);
+
+    public abstract List<Book> getTopBorrowedBooks(int limit);
 
     public abstract void saveBorrowHistory();
 

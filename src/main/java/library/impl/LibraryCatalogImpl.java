@@ -175,6 +175,27 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
     }
 
     @Override
+    public List<Book> getTopBorrowedBooks(int limit) {
+        List<Book> books = new ArrayList<>(catalog.values());
+        books.sort((left, right) -> {
+            int countCompare = Integer.compare(right.getBorrowCount(), left.getBorrowCount());
+            if (countCompare != 0) {
+                return countCompare;
+            }
+            String leftTitle = left.getTitle() == null ? "" : left.getTitle();
+            String rightTitle = right.getTitle() == null ? "" : right.getTitle();
+            return leftTitle.compareToIgnoreCase(rightTitle);
+        });
+
+        if (limit <= 0 || books.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        int cappedLimit = Math.min(limit, books.size());
+        return new ArrayList<>(books.subList(0, cappedLimit));
+    }
+
+    @Override
     public int getActiveBorrowCountForUser(String borrowerName) {
         if (borrowerName == null || borrowerName.trim().isEmpty()) {
             return 0;
