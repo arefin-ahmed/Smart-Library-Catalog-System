@@ -19,11 +19,14 @@ A desktop Library Management System built with Java (Swing) using object-oriente
 - Testing: JUnit 4
 - Persistence: Local file storage (CSV-like text files)
 
-## Current Business Rules
+## Current Rules
 
-- Student
+- UG_Student
   - Max active borrows: 3
   - Loan duration: 10 days
+  - G_Student
+  - Max active borrows: 5
+  - Loan duration: 15 days
 - Faculty
   - Max active borrows: 7
   - Loan duration: 20 days
