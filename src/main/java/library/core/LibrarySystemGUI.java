@@ -46,6 +46,25 @@ import library.util.textfile;
  * Beginner-friendly Swing UI for the Library System.
  */
 public class LibrarySystemGUI extends JFrame {
+    private static final String[] GENRE_OPTIONS = {
+            "Art, Culture and History",
+            "Business",
+            "Chemistry and Physics",
+            "Communication",
+            "Computer science",
+            "Economics",
+            "Education",
+            "Engineering",
+            "Environment Management",
+            "Health and Population",
+            "Language and Literature",
+            "Mathematics and Statistics",
+            "Political Science and Public Administration",
+            "Science - General",
+            "Social Science",
+            "General Collection"
+    };
+
     private static class UsersFileData {
         String[] headers;
         List<String[]> rows;
@@ -190,7 +209,7 @@ public class LibrarySystemGUI extends JFrame {
         JTextField isbnInput = new JTextField();
         JTextField titleInput = new JTextField();
         JTextField authorInput = new JTextField();
-        JTextField genreInput = new JTextField();
+        JComboBox<String> genreInput = new JComboBox<>(GENRE_OPTIONS);
         JTextField publisherInput = new JTextField();
         JTextField totalCopiesInput = new JTextField();
 
@@ -222,7 +241,10 @@ public class LibrarySystemGUI extends JFrame {
         String isbn = isbnInput.getText().trim();
         String title = titleInput.getText().trim();
         String author = authorInput.getText().trim();
-        String genre = genreInput.getText().trim();
+        String genre = String.valueOf(genreInput.getSelectedItem()).trim();
+        if ("Keep current".equals(genre)) {
+            genre = "";
+        }
         String publisher = publisherInput.getText().trim();
         String totalCopiesText = totalCopiesInput.getText().trim();
 
@@ -415,7 +437,7 @@ public class LibrarySystemGUI extends JFrame {
         JTextField isbnInput = new JTextField();
         JTextField titleInput = new JTextField();
         JTextField authorInput = new JTextField();
-        JTextField genreInput = new JTextField();
+        JComboBox<String> genreInput = new JComboBox<>(buildGenreUpdateOptions());
 
         JPanel updatePanel = new JPanel(new GridLayout(4, 2, 8, 8));
         updatePanel.add(new JLabel("ISBN (required):"));
@@ -441,7 +463,7 @@ public class LibrarySystemGUI extends JFrame {
         String isbn = isbnInput.getText().trim();
         String title = titleInput.getText().trim();
         String author = authorInput.getText().trim();
-        String genre = genreInput.getText().trim();
+        String genre = String.valueOf(genreInput.getSelectedItem()).trim();
 
         if (isbn.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Enter ISBN to update a book.");
@@ -1005,6 +1027,13 @@ public class LibrarySystemGUI extends JFrame {
 
     private String[] parseCsvLine(String line) {
         return textfile.parseCsvLine(line);
+    }
+
+    private String[] buildGenreUpdateOptions() {
+        String[] options = new String[GENRE_OPTIONS.length + 1];
+        options[0] = "Keep current";
+        System.arraycopy(GENRE_OPTIONS, 0, options, 1, GENRE_OPTIONS.length);
+        return options;
     }
 
 }
