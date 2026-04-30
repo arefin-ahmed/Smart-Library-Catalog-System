@@ -246,7 +246,7 @@ public class LibrarySystemGUI extends JFrame {
             return;
         }
 
-        Book book = new Book(isbn, title, author, genre, publisher, totalCopies, totalCopies, "General Shelf", 0);
+        Book book = new Book(isbn, title, author, genre, publisher, totalCopies, totalCopies, 0, "");
         catalog.addBook(book);
         persistChanges();
         showAllBooks();

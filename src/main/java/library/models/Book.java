@@ -12,7 +12,6 @@ public class Book {
     private String publisher;
     private int totalCopies;
     private int availableCopies;
-    // private String shelfLocation;
     private int borrowCount;
     private String lastIssueDate;
 
@@ -27,20 +26,6 @@ public class Book {
             String publisher,
             int totalCopies,
             int availableCopies,
-            String shelfLocation,
-            int borrowCount) {
-        this(isbn, title, author, genre, publisher, totalCopies, availableCopies, shelfLocation, borrowCount, "");
-    }
-
-    public Book(
-            String isbn,
-            String title,
-            String author,
-            String genre,
-            String publisher,
-            int totalCopies,
-            int availableCopies,
-            String shelfLocation,
             int borrowCount,
             String lastIssueDate) {
         this.isbn = isbn;
@@ -50,7 +35,6 @@ public class Book {
         this.publisher = publisher;
         this.totalCopies = totalCopies;
         this.availableCopies = availableCopies;
-        // this.shelfLocation = shelfLocation;
         this.borrowCount = borrowCount;
         this.lastIssueDate = lastIssueDate;
     }
@@ -110,14 +94,6 @@ public class Book {
     public void setAvailableCopies(int availableCopies) {
         this.availableCopies = availableCopies;
     }
-
-    // public String getShelfLocation() {
-    //     return shelfLocation;
-    // }
-
-    // public void setShelfLocation(String shelfLocation) {
-    //     this.shelfLocation = shelfLocation;
-    // }
 
     public int getBorrowCount() {
         return borrowCount;

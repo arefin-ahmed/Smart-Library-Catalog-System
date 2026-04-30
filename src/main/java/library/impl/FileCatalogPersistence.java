@@ -32,7 +32,7 @@ public class FileCatalogPersistence implements CatalogPersistence {
         File file = new File(filePath);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(
-                    "isbn,title,author,genre,publisher,totalCopies,availableCopies,shelfLocation,borrowCount,lastIssueDate");
+                    "isbn,title,author,genre,publisher,totalCopies,availableCopies,borrowCount,lastIssueDate");
             writer.newLine();
 
             for (Book book : catalog.values()) {
@@ -65,7 +65,7 @@ public class FileCatalogPersistence implements CatalogPersistence {
                 }
 
                 String[] parts = parseCsvLine(line);
-                if (parts.length < 9) {
+                if (parts.length < 8) {
                     continue;
                 }
 
@@ -77,9 +77,8 @@ public class FileCatalogPersistence implements CatalogPersistence {
                         parts[4],
                         parseIntSafe(parts[5]),
                         parseIntSafe(parts[6]),
-                        parts[7],
-                        parseIntSafe(parts[8]),
-                        parts.length > 9 ? parts[9] : "");
+                        parseIntSafe(parts[7]),
+                        parts.length > 8 ? parts[8] : "");
 
                 loaded.put(book.getIsbn(), book);
             }
@@ -99,7 +98,6 @@ public class FileCatalogPersistence implements CatalogPersistence {
                 textfile.escape(book.getPublisher()),
                 String.valueOf(book.getTotalCopies()),
                 String.valueOf(book.getAvailableCopies()),
-                // textfile.escape(book.getShelfLocation()),
                 String.valueOf(book.getBorrowCount()),
                 textfile.escape(book.getLastIssueDate()));
     }
