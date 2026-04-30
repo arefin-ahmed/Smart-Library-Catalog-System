@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import library.models.Book;
-import library.models.BorrowRecord;
+import library.models.BorrowRecord;   // for tracking book borrow history
 import library.persistence.CatalogPersistence;
 
 /**
