@@ -112,7 +112,7 @@ public class Book {
     }
 
     /**
-     * Borrow one available copy if possible.
+     * Borrow book if there is an available book.
      */
     public boolean borrowBook() {
         if (availableCopies > 0) {
@@ -124,7 +124,7 @@ public class Book {
     }
 
     /**
-     * Return one copy if it does not exceed total copies.
+     * Return book if it does not exceed total copies.
      */
     public boolean returnBook() {
         if (availableCopies < totalCopies) {
