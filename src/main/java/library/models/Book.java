@@ -18,16 +18,8 @@ public class Book {
     public Book() {
     }
 
-    public Book(
-            String isbn,
-            String title,
-            String author,
-            String genre,
-            String publisher,
-            int totalCopies,
-            int availableCopies,
-            int borrowCount,
-            String lastIssueDate) {
+    public Book(String isbn, String title, String author, String genre, String publisher, int totalCopies,
+            int availableCopies, int borrowCount, String lastIssueDate) {
         this.isbn = isbn;
         this.title = title;
         this.author = author;

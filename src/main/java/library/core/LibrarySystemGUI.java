@@ -123,12 +123,12 @@ public class LibrarySystemGUI extends JFrame {
 
         sessionLabel = new JLabel("Not logged in", SwingConstants.RIGHT);
         sessionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        JPanel topPanel = createHeaderPanel(sessionLabel);
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
-        add(topPanel, BorderLayout.NORTH);
+        JPanel headerPanel = createHeaderPanel(sessionLabel);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setBackground(Color.WHITE);
+        centerPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
         tableModel = new DefaultTableModel(
                 new Object[] { "ISBN", "Title", "Author", "Genre", "Available Copies", "Borrow Count" },
@@ -198,7 +198,11 @@ public class LibrarySystemGUI extends JFrame {
 
         applyRolePermissions();
 
-        add(buttonPanel, BorderLayout.SOUTH);
+        JPanel topContainer = new JPanel(new BorderLayout());
+        topContainer.setBackground(Color.WHITE);
+        topContainer.add(headerPanel, BorderLayout.NORTH);
+        topContainer.add(buttonPanel, BorderLayout.SOUTH);
+        add(topContainer, BorderLayout.NORTH);
     }
 
     private void addBookFromInput() {
