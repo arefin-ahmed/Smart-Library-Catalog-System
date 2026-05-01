@@ -4,7 +4,12 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.Insets;
+import java.net.URL;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -21,6 +26,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPasswordField;
@@ -28,6 +34,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.JCheckBox;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 
@@ -46,6 +53,7 @@ import library.util.textfile;
  * Beginner-friendly Swing UI for the Library System.
  */
 public class LibrarySystemGUI extends JFrame {
+    private static final String LOGO_RESOURCE = "/assets/iub-logo.png";
     private static final String[] GENRE_OPTIONS = {
             "Art, Culture and History",
             "Business",
@@ -113,17 +121,10 @@ public class LibrarySystemGUI extends JFrame {
         getContentPane().setBackground(Color.WHITE);
         setLayout(new BorderLayout(10, 10));
 
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(Color.WHITE);
-        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
-
-        JLabel title = new JLabel("Library System", SwingConstants.CENTER);
-        title.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        topPanel.add(title, BorderLayout.CENTER);
-
         sessionLabel = new JLabel("Not logged in", SwingConstants.RIGHT);
         sessionLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        topPanel.add(sessionLabel, BorderLayout.EAST);
+        JPanel topPanel = createHeaderPanel(sessionLabel);
+        topPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 5, 10));
         add(topPanel, BorderLayout.NORTH);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
@@ -802,22 +803,77 @@ public class LibrarySystemGUI extends JFrame {
     private void showLoginDialog() {
         currentUser = null;
 
-        JPanel loginPanel = new JPanel(new GridLayout(2, 2, 8, 8));
+        JPanel loginPanel = new JPanel(new BorderLayout(0, 12));
         loginPanel.setBackground(Color.WHITE);
+        loginPanel.setBorder(BorderFactory.createEmptyBorder(16, 16, 16, 16));
 
-        JTextField usernameField = new JTextField();
-        JPasswordField passwordField = new JPasswordField();
+        JPanel headerPanel = createHeaderPanel(null);
+        loginPanel.add(headerPanel, BorderLayout.NORTH);
 
-        loginPanel.add(new JLabel("Username: "));
-        loginPanel.add(usernameField);
-        loginPanel.add(new JLabel("Password: "));
-        loginPanel.add(passwordField);
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(Color.WHITE);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(8, 0, 6, 0);
+
+        JLabel loginTitle = new JLabel("Log in to your account");
+        loginTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        loginTitle.setForeground(new Color(90, 90, 90));
+        formPanel.add(loginTitle, gbc);
+
+        gbc.gridy++;
+        JLabel helperText = new JLabel(
+                "<html>Use your username and password to log in.</html>");
+        helperText.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        helperText.setForeground(new Color(100, 100, 100));
+        formPanel.add(helperText, gbc);
+
+        gbc.gridwidth = 1;
+        gbc.gridy++;
+        gbc.insets = new Insets(12, 0, 6, 12);
+        JLabel usernameLabel = new JLabel("username:");
+        usernameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        formPanel.add(usernameLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.insets = new Insets(12, 0, 6, 0);
+        JTextField usernameField = new JTextField(24);
+        formPanel.add(usernameField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy++;
+        gbc.insets = new Insets(8, 0, 6, 12);
+        JLabel passwordLabel = new JLabel("Password:");
+        passwordLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        formPanel.add(passwordLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.insets = new Insets(8, 0, 6, 0);
+        JPasswordField passwordField = new JPasswordField(24);
+        formPanel.add(passwordField, gbc);
+
+        gbc.gridx = 1;
+        gbc.gridy++;
+        gbc.insets = new Insets(6, 0, 0, 0);
+        JCheckBox showPassword = new JCheckBox("Show password");
+        showPassword.setBackground(Color.WHITE);
+        char defaultEchoChar = passwordField.getEchoChar();
+        showPassword.addActionListener(e -> {
+            passwordField.setEchoChar(showPassword.isSelected() ? (char) 0 : defaultEchoChar);
+        });
+        formPanel.add(showPassword, gbc);
+
+        loginPanel.add(formPanel, BorderLayout.CENTER);
 
         while (currentUser == null) {
             int option = JOptionPane.showConfirmDialog(
                     this,
                     loginPanel,
-                    "Login (Admin / UG_Student / G_Student / Faculty)",
+                    "Log in to your account",
                     JOptionPane.OK_CANCEL_OPTION,
                     JOptionPane.PLAIN_MESSAGE);
 
@@ -838,6 +894,53 @@ public class LibrarySystemGUI extends JFrame {
 
         sessionLabel.setText("Logged in as: " + currentUser.getRole() + " (" + currentUser.getUsername() + ")");
         applyRolePermissions();
+    }
+
+    private JPanel createHeaderPanel(JLabel rightLabel) {
+        JPanel headerPanel = new JPanel(new BorderLayout(12, 0));
+        headerPanel.setBackground(Color.WHITE);
+
+        JPanel logoPanel = new JPanel(new BorderLayout());
+        logoPanel.setBackground(Color.WHITE);
+        logoPanel.setPreferredSize(new Dimension(72, 72));
+        JLabel logoLabel = createLogoLabel();
+        logoPanel.add(logoLabel, BorderLayout.CENTER);
+
+        JPanel titlePanel = new JPanel(new GridLayout(2, 1));
+        titlePanel.setBackground(Color.WHITE);
+        JLabel orgTitle = new JLabel("Library", SwingConstants.LEFT);
+        orgTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        JLabel orgSubtitle = new JLabel("Independent University, Bangladesh (IUB)", SwingConstants.LEFT);
+        orgSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        titlePanel.add(orgTitle);
+        titlePanel.add(orgSubtitle);
+
+        JPanel leftPanel = new JPanel(new BorderLayout(10, 0));
+        leftPanel.setBackground(Color.WHITE);
+        leftPanel.add(logoPanel, BorderLayout.WEST);
+        leftPanel.add(titlePanel, BorderLayout.CENTER);
+
+        headerPanel.add(leftPanel, BorderLayout.WEST);
+        if (rightLabel != null) {
+            headerPanel.add(rightLabel, BorderLayout.EAST);
+        }
+
+        return headerPanel;
+    }
+
+    private JLabel createLogoLabel() {
+        URL logoUrl = getClass().getResource(LOGO_RESOURCE);
+        if (logoUrl != null) {
+            ImageIcon icon = new ImageIcon(logoUrl);
+            Image scaled = icon.getImage().getScaledInstance(64, 64, Image.SCALE_SMOOTH);
+            return new JLabel(new ImageIcon(scaled), SwingConstants.CENTER);
+        }
+
+        JLabel fallback = new JLabel("IUB", SwingConstants.CENTER);
+        fallback.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        fallback.setForeground(new Color(80, 80, 80));
+        fallback.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
+        return fallback;
     }
 
     private List<BorrowRecord> getHistoryForCurrentUser() {
