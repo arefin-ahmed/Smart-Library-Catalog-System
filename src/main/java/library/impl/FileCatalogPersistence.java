@@ -20,15 +20,15 @@ public class FileCatalogPersistence implements CatalogPersistence {
     private final String filePath;
 
     public FileCatalogPersistence() {
-        this("txt files/catalog.txt"); // If no path - use default file
+        this("txt files/catalog.txt");                 // If no path - use default file
     }
 
-    public FileCatalogPersistence(String filePath) { // change file location later
+    public FileCatalogPersistence(String filePath) {             // change file location later
         this.filePath = filePath;
     }
 
     @Override
-    public void saveCatalog(Map<String, List<Book>> catalog) throws Exception { // WRITE THE FILE
+    public void saveCatalog(Map<String, List<Book>> catalog) throws Exception {      // WRITE THE FILE
         File file = new File(filePath);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(                                    // write column names
@@ -56,12 +56,12 @@ public class FileCatalogPersistence implements CatalogPersistence {
         }
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line = reader.readLine(); // header
+            String line = reader.readLine();               // Skip header
             if (line == null) {
                 return loaded;
             }
 
-            while ((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {          // Read line-by-line
                 if (line.trim().isEmpty()) {
                     continue;
                 }
@@ -73,7 +73,7 @@ public class FileCatalogPersistence implements CatalogPersistence {
 
                 Book book;
                 if (parts.length >= 10) {
-                    book = new Book(
+                    book = new Book(                // Creating Book Object (Converts text → object)
                             parts[0],
                             parts[1],
                             parts[2],
@@ -98,7 +98,7 @@ public class FileCatalogPersistence implements CatalogPersistence {
                             parts.length > 8 ? parts[8] : "");
                 }
 
-                List<Book> bucket = loaded.get(book.getIsbn());
+                List<Book> bucket = loaded.get(book.getIsbn());        // Insert into HashMap
                 if (bucket == null) {
                     bucket = new ArrayList<>();
                     loaded.put(book.getIsbn(), bucket);
@@ -112,12 +112,12 @@ public class FileCatalogPersistence implements CatalogPersistence {
         return loaded;
     }
 
-    private String toCsvLine(Book book) {
+    private String toCsvLine(Book book) {                // Converts object → (CSV line format) text file
         String itemType = book.getItemType() == null || book.getItemType().trim().isEmpty()
                 ? "Book"
                 : book.getItemType().trim();
-        return String.join(",",
-                textfile.escape(book.getIsbn()),
+        return String.join(",",     
+                textfile.escape(book.getIsbn()),                //  escape helps to Prevents CSV breaking issue
                 textfile.escape(book.getTitle()),
                 textfile.escape(book.getAuthor()),
                 textfile.escape(book.getGenre()),
