@@ -49,3 +49,5 @@ isbn,title,author,genre,publisher,itemType,totalCopies,availableCopies,borrowCou
 "128","Macroeconomics Data Tools CD","Olivier Blanchard","Economics","Pearson",Book-CD,10,10,0,""
 "129","Psychology Experiment Clips DVD","Wayne Weiten","Psychology","Cengage",Book-CD,15,15,0,""
 "130","Thermodynamics Property Tables CD","Yunus Cengel","Engineering","McGraw Hill",Book-CD,20,20,0,""
+"031","Fluid Mechanics: Fundamentals and Applications","Yunus Cengel","Engineering","McGraw Hill",12,12,0,"","Book"
+"032","University Physics","George B. Thomas","Physics","Pearson",15,15,0,"","Book"
