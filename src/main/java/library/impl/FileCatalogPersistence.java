@@ -15,31 +15,29 @@ import library.models.Book;
 import library.persistence.CatalogPersistence;
 import library.util.textfile;
 
-/**
- * Saves and loads catalog in a human-readable text file (catalog.txt).
- */
+
 public class FileCatalogPersistence implements CatalogPersistence {
     private final String filePath;
 
     public FileCatalogPersistence() {
-        this("txt files/catalog.txt");
+        this("txt files/catalog.txt"); // If no path - use default file
     }
 
-    public FileCatalogPersistence(String filePath) {
+    public FileCatalogPersistence(String filePath) { // change file location later
         this.filePath = filePath;
     }
 
     @Override
-    public void saveCatalog(Map<String, List<Book>> catalog) throws Exception {
+    public void saveCatalog(Map<String, List<Book>> catalog) throws Exception { // WRITE THE FILE
         File file = new File(filePath);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            writer.write(
-                    "isbn,title,author,genre,publisher,itemType,totalCopies,availableCopies,borrowCount,lastIssueDate");
+            writer.write(                                    // write column names
+                    "isbn,title,author,genre,publisher,itemType,totalCopies,availableCopies,borrowCount,lastIssueDate"); 
             writer.newLine();
 
             for (List<Book> bucket : catalog.values()) {
                 for (Book book : bucket) {
-                    writer.write(toCsvLine(book));
+                    writer.write(toCsvLine(book));    // use this to convert to CSV formet
                     writer.newLine();
                 }
             }
@@ -48,9 +46,9 @@ public class FileCatalogPersistence implements CatalogPersistence {
         }
     }
 
-    @Override
-    public Map<String, List<Book>> loadCatalog() throws Exception {
-        Map<String, List<Book>> loaded = new HashMap<>();
+    @Override 
+    public Map<String, List<Book>> loadCatalog() throws Exception {     // Returns full catalog
+        Map<String, List<Book>> loaded = new HashMap<>();              // Create empty map
         File file = new File(filePath);
 
         if (!file.exists()) {

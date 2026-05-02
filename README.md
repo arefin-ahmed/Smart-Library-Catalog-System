@@ -9,7 +9,7 @@ A desktop Library Management System built with Java (Swing) using object-oriente
 - Book catalog management: add, update, delete, search, and availability listing.
 - Borrow and return workflow with history tracking.
 - Borrow limits and loan durations by user role.
-- Persistent storage in text/CSV files.
+- Persistent storage in text files (CSV format).
 
 ## Tech Stack
 

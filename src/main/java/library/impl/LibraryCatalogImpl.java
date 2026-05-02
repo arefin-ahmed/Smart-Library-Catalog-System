@@ -9,10 +9,6 @@ import library.models.Book;
 import library.models.BorrowRecord;
 import library.persistence.CatalogPersistence;
 
-/**
- * Concrete implementation of the catalog with simple search and circulation
- * logic.
- */
 public class LibraryCatalogImpl extends AbstractLibraryCatalog {
     private static final String ITEM_TYPE_BOOK = "Book";
     private static final String ITEM_TYPE_BOOK_CD = "Book-CD";
