@@ -1,8 +1,11 @@
 package library.core;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import library.models.Book;
 import library.models.BorrowRecord;
@@ -12,11 +15,17 @@ import library.persistence.CatalogPersistence;
 
 public abstract class AbstractLibraryCatalog {
     protected Map<String, Book> catalog;
+    protected Map<String, List<Book>> titleIndex;
+    protected Map<String, List<Book>> authorIndex;
+    protected Map<String, List<Book>> genreIndex;
     protected CatalogPersistence persistence;
 
     public AbstractLibraryCatalog(CatalogPersistence persistence) {
         this.persistence = persistence;
         this.catalog = new HashMap<>();
+        this.titleIndex = new HashMap<>();
+        this.authorIndex = new HashMap<>();
+        this.genreIndex = new HashMap<>();
         loadCatalog();
     }
 
@@ -27,6 +36,9 @@ public abstract class AbstractLibraryCatalog {
 
         Book existing = catalog.get(book.getIsbn());
         if (existing != null) {
+            String oldTitle = existing.getTitle();
+            String oldAuthor = existing.getAuthor();
+            String oldGenre = existing.getGenre();
             existing.setTotalCopies(existing.getTotalCopies() + book.getTotalCopies());
             existing.setAvailableCopies(existing.getAvailableCopies() + book.getAvailableCopies());
             if (book.getTitle() != null && !book.getTitle().trim().isEmpty()) {
@@ -38,8 +50,10 @@ public abstract class AbstractLibraryCatalog {
             if (book.getGenre() != null && !book.getGenre().trim().isEmpty()) {
                 existing.setGenre(book.getGenre());
             }
+            reindexBook(existing, oldTitle, oldAuthor, oldGenre);
         } else {
             catalog.put(book.getIsbn(), book);
+            indexBook(book);
         }
     }
 
@@ -60,7 +74,112 @@ public abstract class AbstractLibraryCatalog {
         if (loaded != null) {
             catalog.clear();
             catalog.putAll(loaded);
+            rebuildIndexes();
         }
+    }
+
+    protected void rebuildIndexes() {
+        titleIndex.clear();
+        authorIndex.clear();
+        genreIndex.clear();
+        for (Book book : catalog.values()) {
+            indexBook(book);
+        }
+    }
+
+    protected void reindexBook(Book book, String oldTitle, String oldAuthor, String oldGenre) {
+        if (book == null) {
+            return;
+        }
+        removeFromIndex(titleIndex, oldTitle, book);
+        removeFromIndex(authorIndex, oldAuthor, book);
+        removeFromIndex(genreIndex, oldGenre, book);
+        indexBook(book);
+    }
+
+    protected void indexBook(Book book) {
+        if (book == null) {
+            return;
+        }
+        addToIndex(titleIndex, book.getTitle(), book);
+        addToIndex(authorIndex, book.getAuthor(), book);
+        addToIndex(genreIndex, book.getGenre(), book);
+    }
+
+    protected void unindexBook(Book book) {
+        if (book == null) {
+            return;
+        }
+        removeFromIndex(titleIndex, book.getTitle(), book);
+        removeFromIndex(authorIndex, book.getAuthor(), book);
+        removeFromIndex(genreIndex, book.getGenre(), book);
+    }
+
+    protected String normalizeKey(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().toLowerCase();
+    }
+
+    protected List<Book> searchIndex(Map<String, List<Book>> index, String query) {
+        String key = normalizeKey(query);
+        if (key.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Book> exact = index.get(key);
+        if (exact != null) {
+            return new ArrayList<>(exact);
+        }
+
+        Set<Book> results = new LinkedHashSet<>();
+        for (Map.Entry<String, List<Book>> entry : index.entrySet()) {
+            if (entry.getKey().contains(key)) {
+                results.addAll(entry.getValue());
+            }
+        }
+        return new ArrayList<>(results);
+    }
+
+    private void addToIndex(Map<String, List<Book>> index, String key, Book book) {
+        for (String normalized : buildIndexKeys(key)) {
+            List<Book> books = index.get(normalized);
+            if (books == null) {
+                books = new ArrayList<>();
+                index.put(normalized, books);
+            }
+            if (!books.contains(book)) {
+                books.add(book);
+            }
+        }
+    }
+
+    private void removeFromIndex(Map<String, List<Book>> index, String key, Book book) {
+        for (String normalized : buildIndexKeys(key)) {
+            List<Book> books = index.get(normalized);
+            if (books == null) {
+                continue;
+            }
+            books.remove(book);
+            if (books.isEmpty()) {
+                index.remove(normalized);
+            }
+        }
+    }
+
+    private List<String> buildIndexKeys(String value) {
+        Set<String> keys = new LinkedHashSet<>();
+        String normalized = normalizeKey(value);
+        if (!normalized.isEmpty()) {
+            keys.add(normalized);
+            String[] tokens = normalized.split("[^a-z0-9]+");
+            for (String token : tokens) {
+                if (!token.isEmpty()) {
+                    keys.add(token);
+                }
+            }
+        }
+        return new ArrayList<>(keys);
     }
 
     public abstract java.util.List<Book> searchByTitle(String title);

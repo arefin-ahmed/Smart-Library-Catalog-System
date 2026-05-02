@@ -41,38 +41,17 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
 
     @Override
     public List<Book> searchByTitle(String title) {
-        List<Book> result = new ArrayList<>();
-        String key = safeLower(title);
-        for (Book book : catalog.values()) {
-            if (safeLower(book.getTitle()).contains(key)) {
-                result.add(book);
-            }
-        }
-        return result;
+        return searchIndex(titleIndex, title);
     }
 
     @Override
     public List<Book> searchByAuthor(String author) {
-        List<Book> result = new ArrayList<>();
-        String key = safeLower(author);
-        for (Book book : catalog.values()) {
-            if (safeLower(book.getAuthor()).contains(key)) {
-                result.add(book);
-            }
-        }
-        return result;
+        return searchIndex(authorIndex, author);
     }
 
     @Override
     public List<Book> searchByGenre(String genre) {
-        List<Book> result = new ArrayList<>();
-        String key = safeLower(genre);
-        for (Book book : catalog.values()) {
-            if (safeLower(book.getGenre()).contains(key)) {
-                result.add(book);
-            }
-        }
-        return result;
+        return searchIndex(genreIndex, genre);
     }
 
     @Override
@@ -151,6 +130,10 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
             return false;
         }
 
+        String oldTitle = book.getTitle();
+        String oldAuthor = book.getAuthor();
+        String oldGenre = book.getGenre();
+
         if (title != null && !title.trim().isEmpty()) {
             book.setTitle(title.trim());
         }
@@ -161,6 +144,8 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
             book.setGenre(genre.trim());
         }
 
+        reindexBook(book, oldTitle, oldAuthor, oldGenre);
+
         return true;
     }
 
@@ -169,7 +154,12 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
         if (isbn == null || isbn.trim().isEmpty()) {
             return false;
         }
-        return catalog.remove(isbn) != null;
+        Book removed = catalog.remove(isbn);
+        if (removed == null) {
+            return false;
+        }
+        unindexBook(removed);
+        return true;
     }
 
     @Override
@@ -267,12 +257,12 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
         this.borrowHistory = historyPersistence.loadHistory();
     }
 
-    private String safeLower(String value) {
-        if (value == null) {
-            return "";
-        }
-        return value.toLowerCase();
-    }
+    // private String safeLower(String value) {
+    //     if (value == null) {
+    //         return "";
+    //     }
+    //     return value.toLowerCase();
+    // }
 
     private boolean isUGStudentRole(String userRole) {
         return userRole != null && "ug_student".equalsIgnoreCase(userRole.trim());
