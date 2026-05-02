@@ -86,7 +86,6 @@ src/main/java/library/
   core/
     AbstractLibraryCatalog.java
     LibrarySystemGUI.java
-    Main.java
   impl/
     LibraryCatalogImpl.java
     FileCatalogPersistenceCSV.java
@@ -94,14 +93,16 @@ src/main/java/library/
   models/
     User.java
     AdminUser.java
-    StudentUser.java
+    UG_Student.java
+    G_Student.java
     FacultyUser.java
     Book.java
     BorrowRecord.java
   persistence/
     CatalogPersistence.java
   util/
-    CsvUtils.java
+    textfiles.java
+  Main.java
 
 src/test/java/library/models/
   AppTest.java
