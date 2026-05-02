@@ -9,13 +9,13 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.Insets;
-import java.net.URL;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.URL;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.ImageIcon;
@@ -34,18 +35,17 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.JCheckBox;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 
 import library.impl.FileCatalogPersistence;
 import library.impl.LibraryCatalogImpl;
+import library.models.AdminUser;
 import library.models.Book;
 import library.models.BorrowRecord;
-import library.models.AdminUser;
 import library.models.FacultyUser;
-import library.models.UG_Student;
 import library.models.G_Student;
+import library.models.UG_Student;
 import library.models.User;
 import library.util.textfile;
 
@@ -54,6 +54,21 @@ import library.util.textfile;
  */
 public class LibrarySystemGUI extends JFrame {
     private static final String LOGO_RESOURCE = "/assets/iub-logo.png";
+    private static final String ITEM_TYPE_BOOK = "Book";
+    private static final String ITEM_TYPE_BOOK_CD = "Book-CD";
+
+    private static final int UG_STUDENT_MAX_BOOK_BORROWS = 3;
+    private static final int UG_STUDENT_MAX_BOOK_CD_BORROWS = 3;
+    private static final int UG_STUDENT_LOAN_DAYS = 10;
+
+    private static final int G_STUDENT_MAX_BOOK_BORROWS = 5;
+    private static final int G_STUDENT_MAX_BOOK_CD_BORROWS = 5;
+    private static final int G_STUDENT_LOAN_DAYS = 15;
+
+    private static final int FACULTY_MAX_BOOK_BORROWS = 10;
+    private static final int FACULTY_MAX_BOOK_CD_BORROWS = 5;
+    private static final int FACULTY_LOAN_DAYS = 30;
+
     private static final String[] GENRE_OPTIONS = {
             "Art, Culture and History",
             "Business",
@@ -131,7 +146,7 @@ public class LibrarySystemGUI extends JFrame {
         centerPanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 20, 20));
 
         tableModel = new DefaultTableModel(
-                new Object[] { "ISBN", "Title", "Author", "Genre", "Available Copies", "Borrow Count" },
+                new Object[] { "ISBN", "Title", "Author", "Genre", "Item Type", "Available Copies", "Borrow Count" },
                 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -215,10 +230,11 @@ public class LibrarySystemGUI extends JFrame {
         JTextField titleInput = new JTextField();
         JTextField authorInput = new JTextField();
         JComboBox<String> genreInput = new JComboBox<>(GENRE_OPTIONS);
+        JComboBox<String> itemTypeInput = new JComboBox<>(new String[] { ITEM_TYPE_BOOK, ITEM_TYPE_BOOK_CD });
         JTextField publisherInput = new JTextField();
         JTextField totalCopiesInput = new JTextField();
 
-        JPanel addPanel = new JPanel(new GridLayout(6, 2, 8, 8));
+        JPanel addPanel = new JPanel(new GridLayout(7, 2, 8, 8));
         addPanel.add(new JLabel("ISBN:"));
         addPanel.add(isbnInput);
         addPanel.add(new JLabel("Title:"));
@@ -227,6 +243,8 @@ public class LibrarySystemGUI extends JFrame {
         addPanel.add(authorInput);
         addPanel.add(new JLabel("Genre:"));
         addPanel.add(genreInput);
+        addPanel.add(new JLabel("Item Type:"));
+        addPanel.add(itemTypeInput);
         addPanel.add(new JLabel("Publisher:"));
         addPanel.add(publisherInput);
         addPanel.add(new JLabel("Total Copies:"));
@@ -250,13 +268,14 @@ public class LibrarySystemGUI extends JFrame {
         if ("Keep current".equals(genre)) {
             genre = "";
         }
+        String itemType = normalizeItemType(String.valueOf(itemTypeInput.getSelectedItem()));
         String publisher = publisherInput.getText().trim();
         String totalCopiesText = totalCopiesInput.getText().trim();
 
         if (isbn.isEmpty() || title.isEmpty() || author.isEmpty() || genre.isEmpty() || publisher.isEmpty()
                 || totalCopiesText.isEmpty()) {
             JOptionPane.showMessageDialog(this,
-                    "Please fill ISBN, Title, Author, Genre, Publisher, and Total Copies.");
+                    "Please fill ISBN, Title, Author, Genre, Item Type, Publisher, and Total Copies.");
             return;
         }
 
@@ -273,7 +292,7 @@ public class LibrarySystemGUI extends JFrame {
             return;
         }
 
-        Book book = new Book(isbn, title, author, genre, publisher, totalCopies, totalCopies, 0, "");
+        Book book = new Book(isbn, title, author, genre, publisher, itemType, totalCopies, totalCopies, 0, "");
         catalog.addBook(book);
         persistChanges();
         showAllBooks();
@@ -582,22 +601,24 @@ public class LibrarySystemGUI extends JFrame {
             return;
         }
 
-        int activeBorrows = catalog.getActiveBorrowCountForUser(currentUser.getUsername());
-        if ("UG_Student".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 3) {
-            JOptionPane.showMessageDialog(this, "Borrow limit reached: UG Students can keep at most 3 active books.");
-            return;
-        }
-        if ("G_Student".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 5) {
-            JOptionPane.showMessageDialog(this, "Borrow limit reached: G Students can keep at most 5 active books.");
-            return;
-        }
-        if ("Faculty".equalsIgnoreCase(currentUser.getRole()) && activeBorrows >= 7) {
-            JOptionPane.showMessageDialog(this, "Borrow limit reached: Faculty can keep at most 7 active books.");
+        String isbn = getIsbnFromSelectionOrInput("borrow");
+        if (isbn == null) {
             return;
         }
 
-        String isbn = getIsbnFromSelectionOrInput("borrow");
-        if (isbn == null) {
+        Book book = catalog.getBookByIsbn(isbn);
+        if (book == null) {
+            JOptionPane.showMessageDialog(this, "Borrow failed. Book not found.");
+            return;
+        }
+
+        String itemType = normalizeItemType(book.getItemType());
+        int activeBorrows = catalog.getActiveBorrowCountForUserByType(currentUser.getUsername(), itemType);
+        int limit = getBorrowLimitForRoleAndType(currentUser.getRole(), itemType);
+        if (limit > 0 && activeBorrows >= limit) {
+            JOptionPane.showMessageDialog(this,
+                    "Borrow limit reached: " + roleLabel(currentUser.getRole()) + " can keep at most " + limit
+                            + " active " + itemType + " items.");
             return;
         }
 
@@ -605,17 +626,13 @@ public class LibrarySystemGUI extends JFrame {
         if (success) {
             persistChanges();
             showAvailableBooks();
-            if ("UG_Student".equalsIgnoreCase(currentUser.getRole())) {
-                String dueDate = LocalDate.now().plusDays(10).toString();
-                JOptionPane.showMessageDialog(this, "Book borrowed successfully. Due date: " + dueDate + " (10 days).");
-            } else if ("G_Student".equalsIgnoreCase(currentUser.getRole())) {
-                String dueDate = LocalDate.now().plusDays(15).toString();
-                JOptionPane.showMessageDialog(this, "Book borrowed successfully. Due date: " + dueDate + " (15 days).");
-            } else if ("Faculty".equalsIgnoreCase(currentUser.getRole())) {
-                String dueDate = LocalDate.now().plusDays(20).toString();
-                JOptionPane.showMessageDialog(this, "Book borrowed successfully. Due date: " + dueDate + " (20 days).");
+            int loanDays = getLoanDaysForRole(currentUser.getRole());
+            if (loanDays > 0) {
+                String dueDate = LocalDate.now().plusDays(loanDays).toString();
+                JOptionPane.showMessageDialog(this,
+                        itemType + " borrowed successfully. Due date: " + dueDate + " (" + loanDays + " days).");
             } else {
-                JOptionPane.showMessageDialog(this, "Book borrowed successfully.");
+                JOptionPane.showMessageDialog(this, itemType + " borrowed successfully.");
             }
         } else {
             JOptionPane.showMessageDialog(this,
@@ -683,6 +700,7 @@ public class LibrarySystemGUI extends JFrame {
                     book.getTitle(),
                     book.getAuthor(),
                     book.getGenre(),
+                    normalizeItemType(book.getItemType()),
                     book.getAvailableCopies(),
                     book.getBorrowCount()
             });
@@ -694,7 +712,7 @@ public class LibrarySystemGUI extends JFrame {
         Map<String, String> userTypes = loadUserTypesFromFile();
 
         DefaultTableModel historyModel = new DefaultTableModel(
-                new Object[] { "Action", "ISBN", "Title", "User", "Type", "Issue Date", "Due Date" },
+                new Object[] { "Action", "ISBN", "Title", "User", "Type", "Item Type", "Issue Date", "Due Date" },
                 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -709,6 +727,7 @@ public class LibrarySystemGUI extends JFrame {
                     record.getBookTitle(),
                     record.getBorrowerName(),
                     resolveUserTypeForHistory(record.getBorrowerName(), record.getUserRole(), userTypes),
+                    normalizeItemType(record.getItemType()),
                     record.getIssueDate(),
                     record.getDueDate()
 
@@ -726,6 +745,53 @@ public class LibrarySystemGUI extends JFrame {
                 ? "Borrow History (All Users)"
                 : "My Borrow History";
         JOptionPane.showMessageDialog(this, pane, dialogTitle, JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String normalizeItemType(String itemType) {
+        if (ITEM_TYPE_BOOK_CD.equalsIgnoreCase(String.valueOf(itemType).trim())) {
+            return ITEM_TYPE_BOOK_CD;
+        }
+        return ITEM_TYPE_BOOK;
+    }
+
+    private int getBorrowLimitForRoleAndType(String role, String itemType) {
+        boolean isBookCd = ITEM_TYPE_BOOK_CD.equalsIgnoreCase(itemType);
+        if ("UG_Student".equalsIgnoreCase(role)) {
+            return isBookCd ? UG_STUDENT_MAX_BOOK_CD_BORROWS : UG_STUDENT_MAX_BOOK_BORROWS;
+        }
+        if ("G_Student".equalsIgnoreCase(role)) {
+            return isBookCd ? G_STUDENT_MAX_BOOK_CD_BORROWS : G_STUDENT_MAX_BOOK_BORROWS;
+        }
+        if ("Faculty".equalsIgnoreCase(role)) {
+            return isBookCd ? FACULTY_MAX_BOOK_CD_BORROWS : FACULTY_MAX_BOOK_BORROWS;
+        }
+        return -1;
+    }
+
+    private int getLoanDaysForRole(String role) {
+        if ("UG_Student".equalsIgnoreCase(role)) {
+            return UG_STUDENT_LOAN_DAYS;
+        }
+        if ("G_Student".equalsIgnoreCase(role)) {
+            return G_STUDENT_LOAN_DAYS;
+        }
+        if ("Faculty".equalsIgnoreCase(role)) {
+            return FACULTY_LOAN_DAYS;
+        }
+        return 0;
+    }
+
+    private String roleLabel(String role) {
+        if ("UG_Student".equalsIgnoreCase(role)) {
+            return "Undergraduate Students";
+        }
+        if ("G_Student".equalsIgnoreCase(role)) {
+            return "Graduate Students";
+        }
+        if ("Faculty".equalsIgnoreCase(role)) {
+            return "Faculty Members";
+        }
+        return "Users";
     }
 
     private void showTopBorrowedBooks() {
@@ -1142,5 +1208,4 @@ public class LibrarySystemGUI extends JFrame {
         System.arraycopy(GENRE_OPTIONS, 0, options, 1, GENRE_OPTIONS.length);
         return options;
     }
-
 }

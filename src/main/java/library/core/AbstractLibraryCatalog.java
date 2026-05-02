@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import library.models.Book;
-import library.models.BorrowRecord; 
+import library.models.BorrowRecord;
 import library.persistence.CatalogPersistence;
 
 // classes define search and borrow rules.
@@ -86,6 +86,8 @@ public abstract class AbstractLibraryCatalog {
     public abstract List<BorrowRecord> getBorrowHistory();
 
     public abstract int getActiveBorrowCountForUser(String borrowerName);
+
+    public abstract int getActiveBorrowCountForUserByType(String borrowerName, String itemType);
 
     public abstract List<Book> getTopBorrowedBooks(int limit);
 

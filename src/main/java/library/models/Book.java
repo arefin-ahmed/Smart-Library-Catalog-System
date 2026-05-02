@@ -10,6 +10,7 @@ public class Book {
     private String author;
     private String genre;
     private String publisher;
+    private String itemType;
     private int totalCopies;
     private int availableCopies;
     private int borrowCount;
@@ -20,11 +21,17 @@ public class Book {
 
     public Book(String isbn, String title, String author, String genre, String publisher, int totalCopies,
             int availableCopies, int borrowCount, String lastIssueDate) {
+        this(isbn, title, author, genre, publisher, "Book", totalCopies, availableCopies, borrowCount, lastIssueDate);
+    }
+
+    public Book(String isbn, String title, String author, String genre, String publisher, String itemType,
+            int totalCopies, int availableCopies, int borrowCount, String lastIssueDate) {
         this.isbn = isbn;
         this.title = title;
         this.author = author;
         this.genre = genre;
         this.publisher = publisher;
+        this.itemType = itemType;
         this.totalCopies = totalCopies;
         this.availableCopies = availableCopies;
         this.borrowCount = borrowCount;
@@ -69,6 +76,14 @@ public class Book {
 
     public void setPublisher(String publisher) {
         this.publisher = publisher;
+    }
+
+    public String getItemType() {
+        return itemType;
+    }
+
+    public void setItemType(String itemType) {
+        this.itemType = itemType;
     }
 
     public int getTotalCopies() {

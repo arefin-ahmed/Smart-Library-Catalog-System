@@ -32,7 +32,7 @@ public class FileCatalogPersistence implements CatalogPersistence {
         File file = new File(filePath);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(
-                    "isbn,title,author,genre,publisher,totalCopies,availableCopies,borrowCount,lastIssueDate");
+                    "isbn,title,author,genre,publisher,itemType,totalCopies,availableCopies,borrowCount,lastIssueDate");
             writer.newLine();
 
             for (Book book : catalog.values()) {
@@ -69,16 +69,32 @@ public class FileCatalogPersistence implements CatalogPersistence {
                     continue;
                 }
 
-                Book book = new Book(
-                        parts[0],
-                        parts[1],
-                        parts[2],
-                        parts[3],
-                        parts[4],
-                        parseIntSafe(parts[5]),
-                        parseIntSafe(parts[6]),
-                        parseIntSafe(parts[7]),
-                        parts.length > 8 ? parts[8] : "");
+                Book book;
+                if (parts.length >= 10) {
+                    book = new Book(
+                            parts[0],
+                            parts[1],
+                            parts[2],
+                            parts[3],
+                            parts[4],
+                            parts[5],
+                            parseIntSafe(parts[6]),
+                            parseIntSafe(parts[7]),
+                            parseIntSafe(parts[8]),
+                            parts.length > 9 ? parts[9] : "");
+                } else {
+                    book = new Book(
+                            parts[0],
+                            parts[1],
+                            parts[2],
+                            parts[3],
+                            parts[4],
+                            "Book",
+                            parseIntSafe(parts[5]),
+                            parseIntSafe(parts[6]),
+                            parseIntSafe(parts[7]),
+                            parts.length > 8 ? parts[8] : "");
+                }
 
                 loaded.put(book.getIsbn(), book);
             }
@@ -90,12 +106,16 @@ public class FileCatalogPersistence implements CatalogPersistence {
     }
 
     private String toCsvLine(Book book) {
+        String itemType = book.getItemType() == null || book.getItemType().trim().isEmpty()
+                ? "Book"
+                : book.getItemType().trim();
         return String.join(",",
                 textfile.escape(book.getIsbn()),
                 textfile.escape(book.getTitle()),
                 textfile.escape(book.getAuthor()),
                 textfile.escape(book.getGenre()),
                 textfile.escape(book.getPublisher()),
+                textfile.escape(itemType),
                 String.valueOf(book.getTotalCopies()),
                 String.valueOf(book.getAvailableCopies()),
                 String.valueOf(book.getBorrowCount()),

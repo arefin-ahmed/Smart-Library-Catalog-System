@@ -14,12 +14,20 @@ import library.persistence.CatalogPersistence;
  * logic.
  */
 public class LibraryCatalogImpl extends AbstractLibraryCatalog {
-    private static final int UG_STUDENT_MAX_ACTIVE_BORROWS = 3;
+    private static final String ITEM_TYPE_BOOK = "Book";
+    private static final String ITEM_TYPE_BOOK_CD = "Book-CD";
+
+    private static final int UG_STUDENT_MAX_BOOK_BORROWS = 3;
+    private static final int UG_STUDENT_MAX_BOOK_CD_BORROWS = 3;
     private static final int UG_STUDENT_LOAN_DAYS = 10;
-    private static final int G_STUDENT_MAX_ACTIVE_BORROWS = 5;
+
+    private static final int G_STUDENT_MAX_BOOK_BORROWS = 5;
+    private static final int G_STUDENT_MAX_BOOK_CD_BORROWS = 5;
     private static final int G_STUDENT_LOAN_DAYS = 15;
-    private static final int FACULTY_MAX_ACTIVE_BORROWS = 7;
-    private static final int FACULTY_LOAN_DAYS = 20;
+
+    private static final int FACULTY_MAX_BOOK_BORROWS = 10;
+    private static final int FACULTY_MAX_BOOK_CD_BORROWS = 5;
+    private static final int FACULTY_LOAN_DAYS = 30;
 
     private List<BorrowRecord> borrowHistory;
     private BorrowHistoryPersistenceTXT historyPersistence;
@@ -79,8 +87,10 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
             return false;
         }
 
-        int roleBorrowLimit = getBorrowLimitForRole(userRole);
-        if (roleBorrowLimit > 0 && getActiveBorrowCountForUser(borrowerName) >= roleBorrowLimit) {
+        String itemType = normalizeItemType(book.getItemType());
+
+        int roleBorrowLimit = getBorrowLimitForRoleAndType(userRole, itemType);
+        if (roleBorrowLimit > 0 && getActiveBorrowCountForUserByType(borrowerName, itemType) >= roleBorrowLimit) {
             return false;
         }
 
@@ -97,6 +107,7 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
                     book.getTitle(),
                     borrowerName,
                     userRole,
+                    itemType,
                     issueDate,
                     dueDate,
                     "BORROW"));
@@ -116,6 +127,8 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
             return false;
         }
 
+        String itemType = normalizeItemType(book.getItemType());
+
         boolean returned = book.returnBook();
         if (returned) {
             borrowHistory.add(new BorrowRecord(
@@ -123,6 +136,7 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
                     book.getTitle(),
                     borrowerName,
                     userRole,
+                    itemType,
                     LocalDate.now().toString(),
                     "",
                     "RETURN"));
@@ -217,6 +231,33 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
     }
 
     @Override
+    public int getActiveBorrowCountForUserByType(String borrowerName, String itemType) {
+        if (borrowerName == null || borrowerName.trim().isEmpty()) {
+            return 0;
+        }
+
+        String normalizedType = normalizeItemType(itemType);
+        int activeCount = 0;
+        for (BorrowRecord record : borrowHistory) {
+            if (!borrowerName.equals(record.getBorrowerName())) {
+                continue;
+            }
+
+            String recordType = normalizeItemType(record.getItemType());
+            if (!recordType.equalsIgnoreCase(normalizedType)) {
+                continue;
+            }
+
+            if ("BORROW".equalsIgnoreCase(record.getAction())) {
+                activeCount++;
+            } else if ("RETURN".equalsIgnoreCase(record.getAction()) && activeCount > 0) {
+                activeCount--;
+            }
+        }
+        return activeCount;
+    }
+
+    @Override
     public void saveBorrowHistory() {
         historyPersistence.saveHistory(borrowHistory);
     }
@@ -245,15 +286,27 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
         return userRole != null && "faculty".equalsIgnoreCase(userRole.trim());
     }
 
-    private int getBorrowLimitForRole(String userRole) {
+    private boolean isBookCdType(String itemType) {
+        return itemType != null && ITEM_TYPE_BOOK_CD.equalsIgnoreCase(itemType.trim());
+    }
+
+    private String normalizeItemType(String itemType) {
+        if (isBookCdType(itemType)) {
+            return ITEM_TYPE_BOOK_CD;
+        }
+        return ITEM_TYPE_BOOK;
+    }
+
+    private int getBorrowLimitForRoleAndType(String userRole, String itemType) {
+        boolean isBookCd = isBookCdType(itemType);
         if (isUGStudentRole(userRole)) {
-            return UG_STUDENT_MAX_ACTIVE_BORROWS;
+            return isBookCd ? UG_STUDENT_MAX_BOOK_CD_BORROWS : UG_STUDENT_MAX_BOOK_BORROWS;
         }
         if (isGStudentRole(userRole)) {
-            return G_STUDENT_MAX_ACTIVE_BORROWS;
+            return isBookCd ? G_STUDENT_MAX_BOOK_CD_BORROWS : G_STUDENT_MAX_BOOK_BORROWS;
         }
         if (isFacultyRole(userRole)) {
-            return FACULTY_MAX_ACTIVE_BORROWS;
+            return isBookCd ? FACULTY_MAX_BOOK_CD_BORROWS : FACULTY_MAX_BOOK_BORROWS;
         }
         return -1;
     }

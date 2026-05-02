@@ -28,14 +28,18 @@ public class BorrowHistoryPersistenceTXT {
 
     public void saveHistory(List<BorrowRecord> history) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(new File(filePath)))) {
-            writer.write("isbn,bookTitle,borrowerName,userRole,issueDate,dueDate,action");
+            writer.write("isbn,bookTitle,borrowerName,userRole,itemType,issueDate,dueDate,action");
             writer.newLine();
             for (BorrowRecord record : history) {
+                String itemType = record.getItemType() == null || record.getItemType().trim().isEmpty()
+                        ? "Book"
+                        : record.getItemType().trim();
                 writer.write(String.join(",",
                         textfile.escape(record.getIsbn()),
                         textfile.escape(record.getBookTitle()),
                         textfile.escape(record.getBorrowerName()),
                         textfile.escape(record.getUserRole()),
+                        textfile.escape(itemType),
                         textfile.escape(record.getIssueDate()),
                         textfile.escape(record.getDueDate()),
                         textfile.escape(record.getAction())));
@@ -68,9 +72,31 @@ public class BorrowHistoryPersistenceTXT {
                     continue;
                 }
 
-                String dueDate = parts.length >= 7 ? parts[5] : "";
-                String action = parts.length >= 7 ? parts[6] : parts[5];
-                history.add(new BorrowRecord(parts[0], parts[1], parts[2], parts[3], parts[4], dueDate, action));
+                String itemType = "Book";
+                String issueDate;
+                String dueDate;
+                String action;
+
+                if (parts.length >= 8) {
+                    itemType = parts[4];
+                    issueDate = parts[5];
+                    dueDate = parts[6];
+                    action = parts[7];
+                } else {
+                    issueDate = parts[4];
+                    dueDate = parts.length >= 7 ? parts[5] : "";
+                    action = parts.length >= 7 ? parts[6] : parts[5];
+                }
+
+                history.add(new BorrowRecord(
+                        parts[0],
+                        parts[1],
+                        parts[2],
+                        parts[3],
+                        itemType,
+                        issueDate,
+                        dueDate,
+                        action));
             }
         } catch (IOException e) {
             System.out.println("Could not load borrow history: " + e.getMessage());
