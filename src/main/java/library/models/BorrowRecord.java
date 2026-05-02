@@ -10,15 +10,15 @@ public class BorrowRecord {
     private String dueDate;
     private String action;
 
-    public BorrowRecord(String isbn, String bookTitle, String borrowerName, String userRole, String issueDate,
-            String action) {
-        this(isbn, bookTitle, borrowerName, userRole, "Book", issueDate, "", action);
-    }
+    // public BorrowRecord(String isbn, String bookTitle, String borrowerName, String userRole, String issueDate,
+    //         String action) {
+    //     this(isbn, bookTitle, borrowerName, userRole, "Book", issueDate, "", action);
+    // }
 
-    public BorrowRecord(String isbn, String bookTitle, String borrowerName, String userRole, String issueDate,
-            String dueDate, String action) {
-        this(isbn, bookTitle, borrowerName, userRole, "Book", issueDate, dueDate, action);
-    }
+    // public BorrowRecord(String isbn, String bookTitle, String borrowerName, String userRole, String issueDate,
+    //         String dueDate, String action) {
+    //     this(isbn, bookTitle, borrowerName, userRole, "Book", issueDate, dueDate, action);
+    // }
 
     public BorrowRecord(String isbn, String bookTitle, String borrowerName, String userRole, String itemType,
             String issueDate, String dueDate, String action) {
