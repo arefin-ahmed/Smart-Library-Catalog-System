@@ -61,7 +61,7 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
 
     @Override
     public boolean borrowBook(String isbn, String borrowerName, String userRole) {
-        Book book = catalog.get(isbn);
+        Book book = getBookByIsbn(isbn);
         if (book == null) {
             return false;
         }
@@ -101,7 +101,7 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
 
     @Override
     public boolean returnBook(String isbn, String borrowerName, String userRole) {
-        Book book = catalog.get(isbn);
+        Book book = getBookByIsbn(isbn);
         if (book == null) {
             return false;
         }
@@ -125,7 +125,7 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
 
     @Override
     public boolean updateBookInfo(String isbn, String title, String author, String genre) {
-        Book book = catalog.get(isbn);
+        Book book = getBookByIsbn(isbn);
         if (book == null) {
             return false;
         }
@@ -154,20 +154,25 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
         if (isbn == null || isbn.trim().isEmpty()) {
             return false;
         }
-        Book removed = catalog.remove(isbn);
-        if (removed == null) {
+        List<Book> removed = catalog.remove(isbn);
+        if (removed == null || removed.isEmpty()) {
             return false;
         }
-        unindexBook(removed);
+        for (Book book : removed) {
+            unindexBook(book);
+        }
         return true;
     }
 
     @Override
     public List<Book> getAvailableBooks() {
         List<Book> available = new ArrayList<>();
-        for (Book book : catalog.values()) {
-            if (book.getAvailableCopies() > 0) {
-                available.add(book);
+        for (List<Book> bucket : catalog.values()) {
+            for (Book book : bucket) {
+                if (book.getAvailableCopies() > 0) {
+                    available.add(book);
+                    break;
+                }
             }
         }
         return available;
@@ -180,7 +185,10 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
 
     @Override
     public List<Book> getTopBorrowedBooks(int limit) {
-        List<Book> books = new ArrayList<>(catalog.values());
+        List<Book> books = new ArrayList<>();
+        for (List<Book> bucket : catalog.values()) {
+            books.addAll(bucket);
+        }
         books.sort((left, right) -> {
             int countCompare = Integer.compare(right.getBorrowCount(), left.getBorrowCount());
             if (countCompare != 0) {
@@ -258,10 +266,10 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
     }
 
     // private String safeLower(String value) {
-    //     if (value == null) {
-    //         return "";
-    //     }
-    //     return value.toLowerCase();
+    // if (value == null) {
+    // return "";
+    // }
+    // return value.toLowerCase();
     // }
 
     private boolean isUGStudentRole(String userRole) {

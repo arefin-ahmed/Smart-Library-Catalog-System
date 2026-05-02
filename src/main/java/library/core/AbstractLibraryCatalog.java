@@ -14,7 +14,7 @@ import library.persistence.CatalogPersistence;
 // classes define search and borrow rules.
 
 public abstract class AbstractLibraryCatalog {
-    protected Map<String, Book> catalog;
+    protected Map<String, List<Book>> catalog;
     protected Map<String, List<Book>> titleIndex;
     protected Map<String, List<Book>> authorIndex;
     protected Map<String, List<Book>> genreIndex;
@@ -34,47 +34,66 @@ public abstract class AbstractLibraryCatalog {
             return;
         }
 
-        Book existing = catalog.get(book.getIsbn());
-        if (existing != null) {
-            String oldTitle = existing.getTitle();
-            String oldAuthor = existing.getAuthor();
-            String oldGenre = existing.getGenre();
-            existing.setTotalCopies(existing.getTotalCopies() + book.getTotalCopies());
-            existing.setAvailableCopies(existing.getAvailableCopies() + book.getAvailableCopies());
-            if (book.getTitle() != null && !book.getTitle().trim().isEmpty()) {
-                existing.setTitle(book.getTitle());
-            }
-            if (book.getAuthor() != null && !book.getAuthor().trim().isEmpty()) {
-                existing.setAuthor(book.getAuthor());
-            }
-            if (book.getGenre() != null && !book.getGenre().trim().isEmpty()) {
-                existing.setGenre(book.getGenre());
-            }
-            reindexBook(existing, oldTitle, oldAuthor, oldGenre);
-        } else {
-            catalog.put(book.getIsbn(), book);
-            indexBook(book);
+        List<Book> bucket = catalog.get(book.getIsbn());
+        if (bucket == null) {
+            bucket = new ArrayList<>();
+            catalog.put(book.getIsbn(), bucket);
         }
+
+        if (bucket.isEmpty()) {
+            bucket.add(book);
+            indexBook(book);
+            return;
+        }
+
+        Book existing = bucket.get(0);
+        String oldTitle = existing.getTitle();
+        String oldAuthor = existing.getAuthor();
+        String oldGenre = existing.getGenre();
+        existing.setTotalCopies(existing.getTotalCopies() + book.getTotalCopies());
+        existing.setAvailableCopies(existing.getAvailableCopies() + book.getAvailableCopies());
+        if (book.getTitle() != null && !book.getTitle().trim().isEmpty()) {
+            existing.setTitle(book.getTitle());
+        }
+        if (book.getAuthor() != null && !book.getAuthor().trim().isEmpty()) {
+            existing.setAuthor(book.getAuthor());
+        }
+        if (book.getGenre() != null && !book.getGenre().trim().isEmpty()) {
+            existing.setGenre(book.getGenre());
+        }
+        reindexBook(existing, oldTitle, oldAuthor, oldGenre);
     }
 
     public Book getBookByIsbn(String isbn) {
-        return catalog.get(isbn);
+        List<Book> bucket = catalog.get(isbn);
+        if (bucket == null || bucket.isEmpty()) {
+            return null;
+        }
+        return bucket.get(0);
     }
 
-    public Map<String, Book> getAllBooks() {
+    public Map<String, List<Book>> getAllBooks() {
         return new HashMap<>(catalog);
     }
 
     public void saveCatalog() {
-        persistence.saveCatalog(catalog);
+        try {
+            persistence.saveCatalog(catalog);
+        } catch (Exception e) {
+            System.out.println("Error saving catalog: " + e.getMessage());
+        }
     }
 
     public void loadCatalog() {
-        Map<String, Book> loaded = persistence.loadCatalog();
-        if (loaded != null) {
-            catalog.clear();
-            catalog.putAll(loaded);
-            rebuildIndexes();
+        try {
+            Map<String, List<Book>> loaded = persistence.loadCatalog();
+            if (loaded != null) {
+                catalog.clear();
+                catalog.putAll(loaded);
+                rebuildIndexes();
+            }
+        } catch (Exception e) {
+            System.out.println("Error loading catalog: " + e.getMessage());
         }
     }
 
@@ -82,8 +101,10 @@ public abstract class AbstractLibraryCatalog {
         titleIndex.clear();
         authorIndex.clear();
         genreIndex.clear();
-        for (Book book : catalog.values()) {
-            indexBook(book);
+        for (List<Book> bucket : catalog.values()) {
+            for (Book book : bucket) {
+                indexBook(book);
+            }
         }
     }
 

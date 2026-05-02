@@ -1,11 +1,11 @@
 package library.persistence;
 
+import java.util.List;
 import java.util.Map;
-// import java.util.List;
 import library.models.Book;
 
 public interface CatalogPersistence {
-    void saveCatalog(Map<String, Book> catalog);
+    void saveCatalog(Map<String, List<Book>> catalog) throws Exception;
 
-    Map<String, Book> loadCatalog();
+    Map<String, List<Book>> loadCatalog() throws Exception;
 }

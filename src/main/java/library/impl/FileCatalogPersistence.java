@@ -6,7 +6,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import library.models.Book;
@@ -28,16 +30,18 @@ public class FileCatalogPersistence implements CatalogPersistence {
     }
 
     @Override
-    public void saveCatalog(Map<String, Book> catalog) {
+    public void saveCatalog(Map<String, List<Book>> catalog) throws Exception {
         File file = new File(filePath);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(
                     "isbn,title,author,genre,publisher,itemType,totalCopies,availableCopies,borrowCount,lastIssueDate");
             writer.newLine();
 
-            for (Book book : catalog.values()) {
-                writer.write(toCsvLine(book));
-                writer.newLine();
+            for (List<Book> bucket : catalog.values()) {
+                for (Book book : bucket) {
+                    writer.write(toCsvLine(book));
+                    writer.newLine();
+                }
             }
         } catch (IOException e) {
             System.out.println("Could not save catalog: " + e.getMessage());
@@ -45,8 +49,8 @@ public class FileCatalogPersistence implements CatalogPersistence {
     }
 
     @Override
-    public Map<String, Book> loadCatalog() {
-        Map<String, Book> loaded = new HashMap<>();
+    public Map<String, List<Book>> loadCatalog() throws Exception {
+        Map<String, List<Book>> loaded = new HashMap<>();
         File file = new File(filePath);
 
         if (!file.exists()) {
@@ -96,7 +100,12 @@ public class FileCatalogPersistence implements CatalogPersistence {
                             parts.length > 8 ? parts[8] : "");
                 }
 
-                loaded.put(book.getIsbn(), book);
+                List<Book> bucket = loaded.get(book.getIsbn());
+                if (bucket == null) {
+                    bucket = new ArrayList<>();
+                    loaded.put(book.getIsbn(), bucket);
+                }
+                bucket.add(book);
             }
         } catch (IOException e) {
             System.out.println("Could not load catalog: " + e.getMessage());

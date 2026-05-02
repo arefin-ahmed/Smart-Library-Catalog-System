@@ -584,7 +584,11 @@ public class LibrarySystemGUI extends JFrame {
     }
 
     private void showAllBooks() {
-        populateTable(new ArrayList<>(catalog.getAllBooks().values()));
+        List<Book> books = new ArrayList<>();
+        for (List<Book> bucket : catalog.getAllBooks().values()) {
+            books.addAll(bucket);
+        }
+        populateTable(books);
     }
 
     private void refreshBookViewForCurrentRole() {
