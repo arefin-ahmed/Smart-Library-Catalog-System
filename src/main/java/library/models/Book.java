@@ -1,9 +1,5 @@
 package library.models;
 
-/**
- * Book model class.
- * Demonstrates encapsulation by keeping fields private and exposing methods.
- */
 public class Book {
     private String isbn;
     private String title;
