@@ -35,7 +35,7 @@ public abstract class AbstractLibraryCatalog {               // Index Maps
 
         List<Book> bucket = catalog.get(book.getIsbn());         // the value (list) stored for a key
         if (bucket == null) {
-            bucket = new ArrayList<>();
+            bucket = new ArrayList<>();                       //Data is stored in buckets internally
             catalog.put(book.getIsbn(), bucket);
         }
 
@@ -45,7 +45,7 @@ public abstract class AbstractLibraryCatalog {               // Index Maps
             return;
         }
 
-        Book existing = bucket.get(0);
+        Book existing = bucket.get(0);                
         String oldTitle = existing.getTitle();
         String oldAuthor = existing.getAuthor();
         String oldGenre = existing.getGenre();

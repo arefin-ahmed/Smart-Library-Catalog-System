@@ -5,7 +5,7 @@ import java.util.Map;
 import library.models.Book;
 
 public interface CatalogPersistence {
-    void saveCatalog(Map<String, List<Book>> catalog) throws Exception;
+    void saveCatalog(Map<String, List<Book>> catalog) throws Exception;   //write the file
 
-    Map<String, List<Book>> loadCatalog() throws Exception;
+    Map<String, List<Book>> loadCatalog() throws Exception;          //read from file
 }
