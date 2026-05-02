@@ -11,19 +11,18 @@ import library.models.Book;
 import library.models.BorrowRecord;
 import library.persistence.CatalogPersistence;
 
-// classes define search and borrow rules.
 
-public abstract class AbstractLibraryCatalog {
-    protected Map<String, List<Book>> catalog;
+public abstract class AbstractLibraryCatalog {               // Index Maps
+    protected Map<String, List<Book>> catalog;         // search book by ISBN, title, author, genre
     protected Map<String, List<Book>> titleIndex;
     protected Map<String, List<Book>> authorIndex;
     protected Map<String, List<Book>> genreIndex;
     protected CatalogPersistence persistence;
 
-    public AbstractLibraryCatalog(CatalogPersistence persistence) {
-        this.persistence = persistence;
-        this.catalog = new HashMap<>();
-        this.titleIndex = new HashMap<>();
+    public AbstractLibraryCatalog(CatalogPersistence persistence) {       
+        this.persistence = persistence;              // Assign persistence 
+        this.catalog = new HashMap<>();                
+        this.titleIndex = new HashMap<>();            //Create empty HashMaps and Load/ restore saved data 
         this.authorIndex = new HashMap<>();
         this.genreIndex = new HashMap<>();
         loadCatalog();
@@ -34,7 +33,7 @@ public abstract class AbstractLibraryCatalog {
             return;
         }
 
-        List<Book> bucket = catalog.get(book.getIsbn());
+        List<Book> bucket = catalog.get(book.getIsbn());         // the value (list) stored for a key
         if (bucket == null) {
             bucket = new ArrayList<>();
             catalog.put(book.getIsbn(), bucket);
