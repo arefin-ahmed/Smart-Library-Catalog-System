@@ -80,11 +80,13 @@ public class FileCatalogPersistence implements CatalogPersistence {
                             parts[3],
                             parts[4],
                             parts[5],
-                            parseIntSafe(parts[6]),
+                            parseIntSafe(parts[6]),        // Prevents crash if invalid
                             parseIntSafe(parts[7]),
                             parseIntSafe(parts[8]),
-                            parts.length > 9 ? parts[9] : "");
-                } else {
+                            parts.length > 9 ? parts[9] : "");         //if issue date is missing → set to empty string
+                } 
+                
+                else {
                     book = new Book(
                             parts[0],
                             parts[1],

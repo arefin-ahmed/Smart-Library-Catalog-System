@@ -20,9 +20,9 @@ public abstract class AbstractLibraryCatalog {               // Index Maps
     protected CatalogPersistence persistence;
 
     public AbstractLibraryCatalog(CatalogPersistence persistence) {       
-        this.persistence = persistence;              // Assign persistence 
+        this.persistence = persistence;              // Assign persistence in storage system
         this.catalog = new HashMap<>();                
-        this.titleIndex = new HashMap<>();            //Create empty HashMaps and Load/ restore saved data 
+        this.titleIndex = new HashMap<>();            //Create empty HashMaps and restore previous data 
         this.authorIndex = new HashMap<>();
         this.genreIndex = new HashMap<>();
         loadCatalog();
@@ -33,7 +33,7 @@ public abstract class AbstractLibraryCatalog {               // Index Maps
             return;
         }
 
-        List<Book> bucket = catalog.get(book.getIsbn());         // the value (list) stored for a key
+        List<Book> bucket = catalog.get(book.getIsbn());         // bucket = value of that key (list)
         if (bucket == null) {
             bucket = new ArrayList<>();                       //Data is stored in buckets internally
             catalog.put(book.getIsbn(), bucket);
@@ -60,7 +60,7 @@ public abstract class AbstractLibraryCatalog {               // Index Maps
         if (book.getGenre() != null && !book.getGenre().trim().isEmpty()) {
             existing.setGenre(book.getGenre());
         }
-        reindexBook(existing, oldTitle, oldAuthor, oldGenre);
+        reindexBook(existing, oldTitle, oldAuthor, oldGenre);       //if data changed → indexes must update
     }
 
     public Book getBookByIsbn(String isbn) {
