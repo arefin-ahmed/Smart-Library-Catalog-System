@@ -11,32 +11,36 @@ import library.models.Book;
 import library.models.BorrowRecord;
 import library.persistence.CatalogPersistence;
 
-
-public abstract class AbstractLibraryCatalog {               // Index Maps
-    protected Map<String, List<Book>> catalog;         // search book by ISBN, title, author, genre
+public abstract class AbstractLibraryCatalog { // Index Maps
+    protected Map<String, List<Book>> catalog; // search book by ISBN, title, author, genre
     protected Map<String, List<Book>> titleIndex;
     protected Map<String, List<Book>> authorIndex;
     protected Map<String, List<Book>> genreIndex;
     protected CatalogPersistence persistence;
 
-    public AbstractLibraryCatalog(CatalogPersistence persistence) {       
-        this.persistence = persistence;              // Assign persistence in storage system
-        this.catalog = new HashMap<>();                
-        this.titleIndex = new HashMap<>();            //Create empty HashMaps and restore previous data 
+    public AbstractLibraryCatalog(CatalogPersistence persistence) {
+        this.persistence = persistence; // Assign persistence in storage system
+        this.catalog = new HashMap<>();
+        this.titleIndex = new HashMap<>(); // Create empty HashMaps and restore previous data
         this.authorIndex = new HashMap<>();
         this.genreIndex = new HashMap<>();
         loadCatalog();
     }
 
     public void addBook(Book book) {
-        if (book == null || book.getIsbn() == null || book.getIsbn().trim().isEmpty()) {
+        if (book == null) {
             return;
         }
 
-        List<Book> bucket = catalog.get(book.getIsbn());         // bucket = value of that key (list)
+        String isbn = normalizedValueOrNull(book.getIsbn());
+        if (isbn == null) {
+            return;
+        }
+
+        List<Book> bucket = catalog.get(isbn);
         if (bucket == null) {
-            bucket = new ArrayList<>();                       //Data is stored in buckets internally
-            catalog.put(book.getIsbn(), bucket);
+            bucket = new ArrayList<>();
+            catalog.put(isbn, bucket);
         }
 
         if (bucket.isEmpty()) {
@@ -45,22 +49,27 @@ public abstract class AbstractLibraryCatalog {               // Index Maps
             return;
         }
 
-        Book existing = bucket.get(0);                
+        Book existing = bucket.get(0);
         String oldTitle = existing.getTitle();
         String oldAuthor = existing.getAuthor();
         String oldGenre = existing.getGenre();
         existing.setTotalCopies(existing.getTotalCopies() + book.getTotalCopies());
         existing.setAvailableCopies(existing.getAvailableCopies() + book.getAvailableCopies());
-        if (book.getTitle() != null && !book.getTitle().trim().isEmpty()) {
-            existing.setTitle(book.getTitle());
+
+        String newTitle = normalizedValueOrNull(book.getTitle());
+        if (newTitle != null) {
+            existing.setTitle(newTitle);
         }
-        if (book.getAuthor() != null && !book.getAuthor().trim().isEmpty()) {
-            existing.setAuthor(book.getAuthor());
+        String newAuthor = normalizedValueOrNull(book.getAuthor());
+        if (newAuthor != null) {
+            existing.setAuthor(newAuthor);
         }
-        if (book.getGenre() != null && !book.getGenre().trim().isEmpty()) {
-            existing.setGenre(book.getGenre());
+        String newGenre = normalizedValueOrNull(book.getGenre());
+        if (newGenre != null) {
+            existing.setGenre(newGenre);
         }
-        reindexBook(existing, oldTitle, oldAuthor, oldGenre);       //if data changed → indexes must update
+
+        reindexBook(existing, oldTitle, oldAuthor, oldGenre);
     }
 
     public Book getBookByIsbn(String isbn) {
@@ -140,6 +149,14 @@ public abstract class AbstractLibraryCatalog {               // Index Maps
             return "";
         }
         return value.trim().toLowerCase();
+    }
+
+    protected String normalizedValueOrNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     protected List<Book> searchIndex(Map<String, List<Book>> index, String query) {

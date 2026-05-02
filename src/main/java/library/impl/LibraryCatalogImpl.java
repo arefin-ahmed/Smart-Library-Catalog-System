@@ -13,6 +13,9 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
     private static final String ITEM_TYPE_BOOK = "Book";
     private static final String ITEM_TYPE_BOOK_CD = "Book-CD";
 
+    private static final String ACTION_BORROW = "BORROW";
+    private static final String ACTION_RETURN = "RETURN";
+
     private static final int UG_STUDENT_MAX_BOOK_BORROWS = 3;
     private static final int UG_STUDENT_MAX_BOOK_CD_BORROWS = 3;
     private static final int UG_STUDENT_LOAN_DAYS = 10;
@@ -77,15 +80,7 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
             int loanDays = getLoanDaysForRole(userRole);
             String dueDate = loanDays > 0 ? issue.plusDays(loanDays).toString() : "";
             book.setLastIssueDate(issueDate);
-            borrowHistory.add(new BorrowRecord(
-                    book.getIsbn(),
-                    book.getTitle(),
-                    borrowerName,
-                    userRole,
-                    itemType,
-                    issueDate,
-                    dueDate,
-                    "BORROW"));
+            recordHistory(book, borrowerName, userRole, itemType, issueDate, dueDate, ACTION_BORROW);
         }
         return borrowed;
     }
@@ -106,15 +101,7 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
 
         boolean returned = book.returnBook();
         if (returned) {
-            borrowHistory.add(new BorrowRecord(
-                    book.getIsbn(),
-                    book.getTitle(),
-                    borrowerName,
-                    userRole,
-                    itemType,
-                    LocalDate.now().toString(),
-                    "",
-                    "RETURN"));
+            recordHistory(book, borrowerName, userRole, itemType, LocalDate.now().toString(), "", ACTION_RETURN);
         }
         return returned;
     }
@@ -205,50 +192,12 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
 
     @Override
     public int getActiveBorrowCountForUser(String borrowerName) {
-        if (borrowerName == null || borrowerName.trim().isEmpty()) {
-            return 0;
-        }
-
-        int activeCount = 0;
-        for (BorrowRecord record : borrowHistory) {
-            if (!borrowerName.equals(record.getBorrowerName())) {
-                continue;
-            }
-
-            if ("BORROW".equalsIgnoreCase(record.getAction())) {
-                activeCount++;
-            } else if ("RETURN".equalsIgnoreCase(record.getAction()) && activeCount > 0) {
-                activeCount--;
-            }
-        }
-        return activeCount;
+        return getActiveBorrowCount(borrowerName, null);
     }
 
     @Override
     public int getActiveBorrowCountForUserByType(String borrowerName, String itemType) {
-        if (borrowerName == null || borrowerName.trim().isEmpty()) {
-            return 0;
-        }
-
-        String normalizedType = normalizeItemType(itemType);
-        int activeCount = 0;
-        for (BorrowRecord record : borrowHistory) {
-            if (!borrowerName.equals(record.getBorrowerName())) {
-                continue;
-            }
-
-            String recordType = normalizeItemType(record.getItemType());
-            if (!recordType.equalsIgnoreCase(normalizedType)) {
-                continue;
-            }
-
-            if ("BORROW".equalsIgnoreCase(record.getAction())) {
-                activeCount++;
-            } else if ("RETURN".equalsIgnoreCase(record.getAction()) && activeCount > 0) {
-                activeCount--;
-            }
-        }
-        return activeCount;
+        return getActiveBorrowCount(borrowerName, itemType);
     }
 
     @Override
@@ -262,15 +211,15 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
     }
 
     private boolean isUGStudentRole(String userRole) {
-        return userRole != null && "ug_student".equalsIgnoreCase(userRole.trim());
+        return isRole(userRole, "ug_student");
     }
 
     private boolean isGStudentRole(String userRole) {
-        return userRole != null && "g_student".equalsIgnoreCase(userRole.trim());
+        return isRole(userRole, "g_student");
     }
 
     private boolean isFacultyRole(String userRole) {
-        return userRole != null && "faculty".equalsIgnoreCase(userRole.trim());
+        return isRole(userRole, "faculty");
     }
 
     private boolean isBookCdType(String itemType) {
@@ -309,5 +258,56 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
             return FACULTY_LOAN_DAYS;
         }
         return 0;
+    }
+
+    private boolean isRole(String userRole, String expectedRole) {
+        return userRole != null && expectedRole.equalsIgnoreCase(userRole.trim());
+    }
+
+    private int getActiveBorrowCount(String borrowerName, String itemType) {
+        if (borrowerName == null || borrowerName.trim().isEmpty()) {
+            return 0;
+        }
+
+        String normalizedType = itemType == null ? null : normalizeItemType(itemType);
+        int activeCount = 0;
+        for (BorrowRecord record : borrowHistory) {
+            if (!borrowerName.equals(record.getBorrowerName())) {
+                continue;
+            }
+
+            if (normalizedType != null) {
+                String recordType = normalizeItemType(record.getItemType());
+                if (!recordType.equalsIgnoreCase(normalizedType)) {
+                    continue;
+                }
+            }
+
+            if (ACTION_BORROW.equalsIgnoreCase(record.getAction())) {
+                activeCount++;
+            } else if (ACTION_RETURN.equalsIgnoreCase(record.getAction()) && activeCount > 0) {
+                activeCount--;
+            }
+        }
+        return activeCount;
+    }
+
+    private void recordHistory(
+            Book book,
+            String borrowerName,
+            String userRole,
+            String itemType,
+            String issueDate,
+            String dueDate,
+            String action) {
+        borrowHistory.add(new BorrowRecord(
+                book.getIsbn(),
+                book.getTitle(),
+                borrowerName,
+                userRole,
+                itemType,
+                issueDate,
+                dueDate,
+                action));
     }
 }
