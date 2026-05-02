@@ -40,7 +40,7 @@ isbn,title,author,genre,publisher,itemType,totalCopies,availableCopies,borrowCou
 "016","A History of Western Philosophy","Bertrand Russell","Philosophy","Routledge","Book",7,7,0,""
 "017","International Relations Theory","Stephen McGlinchey","Pol Science","E-IR","Book",9,9,0,""
 "018","Data Communications and Networking","Behrouz Forouzan","Computer Science","McGraw Hill","Book",22,22,0,""
-"019","Principles of Marketing","Philip Kotler","Business","Pearson","Book",25,25,0,""
+"019","Principles of Marketing","Philip Kotler","Keep current","Pearson","Book",25,25,0,""
 "020","The Feynman Lectures on Physics","Richard Feynman","Physics","Caltech","Book",6,6,0,""
 "021","Thermodynamics: An Engineering Approach","Yunus Cengel","Engineering","McGraw Hill","Book",14,14,0,""
 "022","Sociology: A Global Perspective","Joan Ferrante","Sociology","Cengage","Book",11,11,0,""

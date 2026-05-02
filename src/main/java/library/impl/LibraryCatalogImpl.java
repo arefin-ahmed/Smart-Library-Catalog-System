@@ -265,13 +265,6 @@ public class LibraryCatalogImpl extends AbstractLibraryCatalog {
         this.borrowHistory = historyPersistence.loadHistory();
     }
 
-    // private String safeLower(String value) {
-    // if (value == null) {
-    // return "";
-    // }
-    // return value.toLowerCase();
-    // }
-
     private boolean isUGStudentRole(String userRole) {
         return userRole != null && "ug_student".equalsIgnoreCase(userRole.trim());
     }
