@@ -49,7 +49,7 @@ import library.models.UG_Student;
 import library.models.User;
 import library.util.textfile;
 
-//Use Java Swing UI for the Library System. 
+ //Use Java Swing UI for the Library System. 
 
 public class LibrarySystemGUI extends JFrame {
     private static final String LOGO_RESOURCE = "/assets/iub-logo.png";
@@ -115,20 +115,16 @@ public class LibrarySystemGUI extends JFrame {
     private JButton topBorrowedButton;
     private JButton logoutButton;
 
-    private JPanel adminActionsPanel;
-    private JPanel catalogActionsPanel;
-    private JPanel circulationActionsPanel;
-
     private DefaultTableModel tableModel;
     private JTable table;
 
-    public LibrarySystemGUI() { // Core idea of the system , connect with Abstract class
-        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistence("txt files/catalog.txt"));
+    public LibrarySystemGUI() {                // Core idea of the system , connect with Abstract class
+        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistence("txt files/catalog.txt"));   
 
-        // initializes -> LibraryCatalogImpl → handles logic (add/search/borrow books)
-        // -> FileCatalogPersistence → saves data into .txt files
+                           //initializes -> LibraryCatalogImpl → handles logic (add/search/borrow books)
+                                    //   -> FileCatalogPersistence → saves data into .txt files
 
-        setTitle("IUB Library System");
+        setTitle("IUB Library System");         
         setSize(1200, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -171,7 +167,7 @@ public class LibrarySystemGUI extends JFrame {
 
         add(centerPanel, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        JPanel buttonPanel = new JPanel();
         buttonPanel.setBackground(Color.WHITE);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 10, 10));
 
@@ -203,16 +199,19 @@ public class LibrarySystemGUI extends JFrame {
         topBorrowedButton.addActionListener(e -> showTopBorrowedBooks());
         logoutButton.addActionListener(e -> logout());
 
-        adminActionsPanel = createActionGroup("Admin", addButton, addUserButton, viewUsersButton, updateButton,
-                deleteButton);
-        catalogActionsPanel = createActionGroup("Catalog", searchButton, showAllButton, availableButton,
-                topBorrowedButton);
-        circulationActionsPanel = createActionGroup("Account", borrowButton, returnButton, historyButton,
-                logoutButton);
-
-        buttonPanel.add(adminActionsPanel);
-        buttonPanel.add(catalogActionsPanel);
-        buttonPanel.add(circulationActionsPanel);
+        buttonPanel.add(addButton);
+        buttonPanel.add(addUserButton);
+        buttonPanel.add(viewUsersButton);
+        buttonPanel.add(updateButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(searchButton);
+        buttonPanel.add(showAllButton);
+        buttonPanel.add(availableButton);
+        buttonPanel.add(borrowButton);
+        buttonPanel.add(returnButton);
+        buttonPanel.add(historyButton);
+        buttonPanel.add(topBorrowedButton);
+        buttonPanel.add(logoutButton);
 
         applyRolePermissions();
 
@@ -596,31 +595,6 @@ public class LibrarySystemGUI extends JFrame {
 
     private void refreshBookViewForCurrentRole() {
         showAllBooks();
-    }
-
-    private JPanel createActionGroup(String title, JButton... buttons) {
-        JPanel groupPanel = new JPanel(new GridLayout(0, 1, 8, 8));
-        groupPanel.setBackground(Color.WHITE);
-        groupPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(225, 225, 225)), title),
-                BorderFactory.createEmptyBorder(8, 8, 8, 8)));
-
-        for (JButton button : buttons) {
-            styleActionButton(button);
-            groupPanel.add(button);
-        }
-
-        return groupPanel;
-    }
-
-    private void styleActionButton(JButton button) {
-        button.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        button.setFocusPainted(false);
-        button.setBackground(Color.WHITE);
-        button.setOpaque(true);
-        button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(210, 210, 210)),
-                BorderFactory.createEmptyBorder(6, 10, 6, 10)));
     }
 
     private void showAvailableBooks() {
@@ -1099,16 +1073,6 @@ public class LibrarySystemGUI extends JFrame {
         historyButton.setEnabled(loggedIn);
         topBorrowedButton.setEnabled(loggedIn);
         logoutButton.setEnabled(loggedIn);
-
-        if (adminActionsPanel != null) {
-            adminActionsPanel.setVisible(isAdmin);
-        }
-        if (catalogActionsPanel != null) {
-            catalogActionsPanel.setVisible(loggedIn);
-        }
-        if (circulationActionsPanel != null) {
-            circulationActionsPanel.setVisible(loggedIn);
-        }
 
         revalidate();
         repaint();
