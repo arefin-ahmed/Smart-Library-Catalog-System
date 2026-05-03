@@ -49,9 +49,8 @@ import library.models.UG_Student;
 import library.models.User;
 import library.util.textfile;
 
-/**
- * Beginner-friendly Swing UI for the Library System.
- */
+ //Use Java Swing UI for the Library System. 
+
 public class LibrarySystemGUI extends JFrame {
     private static final String LOGO_RESOURCE = "/assets/iub-logo.png";
     private static final String ITEM_TYPE_BOOK = "Book";
@@ -119,10 +118,13 @@ public class LibrarySystemGUI extends JFrame {
     private DefaultTableModel tableModel;
     private JTable table;
 
-    public LibrarySystemGUI() {
-        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistence("txt files/catalog.txt"));
+    public LibrarySystemGUI() {                // Core idea of the system , connect with Abstract class
+        this.catalog = new LibraryCatalogImpl(new FileCatalogPersistence("txt files/catalog.txt"));   
 
-        setTitle("Smart Library Catalog System");
+                           //initializes -> LibraryCatalogImpl → handles logic (add/search/borrow books)
+                                    //   -> FileCatalogPersistence → saves data into .txt files
+
+        setTitle("IUB Library System");         
         setSize(1200, 600);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
